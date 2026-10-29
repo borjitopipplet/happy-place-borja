@@ -52,7 +52,14 @@ export type Blocker = {
   severity: string;
   status: string;
   updated_at: string;
+  created_at?: string;
+  proposed_by_email?: string | null;
+  proposed_team?: string | null;
+  decision_note?: string | null;
+  decided_by_name?: string | null;
 };
+
+export const SEVERITY_LABELS: Record<string, string> = { critical: "Haute", warning: "Moyenne", info: "Basse" };
 
 export type Metric = {
   key: string;
@@ -253,6 +260,8 @@ export async function fetchBlockers(): Promise<Blocker[]> {
     .from("blockers")
     .select("*")
     .neq("status", "RÉSOLU")
+    .neq("status", "PROPOSÉ")
+    .neq("status", "REFUSÉ")
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as Blocker[];
@@ -293,6 +302,49 @@ export async function fetchValidatedSubmissions(): Promise<ValidatedSubmission[]
   return rows
     .map((r) => ({ ...r, validated_at: dates.get(r.id) ?? null }))
     .sort((a, b) => (b.validated_at ?? b.created_at).localeCompare(a.validated_at ?? a.created_at));
+}
+
+/** Propositions de points bloquants visibles par l'utilisateur : les siennes, celles de son équipe (manager) ou toutes (admin). */
+export async function fetchBlockerProposals(): Promise<Blocker[]> {
+  const { data, error } = await db
+    .from("blockers")
+    .select("*")
+    .in("status", ["PROPOSÉ", "REFUSÉ"])
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Blocker[];
+}
+
+export async function proposeBlocker(input: { title: string; description: string; severity: string; team?: string }) {
+  const { data: u } = await db.auth.getUser();
+  const email = u.user?.email?.toLowerCase();
+  if (!email) throw new Error("Session expirée");
+  const { error } = await db.from("blockers").insert({
+    title: input.title,
+    description: input.description || null,
+    severity: input.severity as Enums["blocker_severity"],
+    status: "PROPOSÉ",
+    proposed_by_email: email,
+    proposed_team: input.team || null,
+  });
+  if (error) throw error;
+}
+
+export async function decideBlockerProposal(input: {
+  id: string;
+  status: "OUVERT" | "REFUSÉ";
+  severity: string;
+  decision_note?: string;
+}) {
+  const { error } = await db
+    .from("blockers")
+    .update({
+      status: input.status,
+      severity: input.severity as Enums["blocker_severity"],
+      decision_note: input.decision_note?.trim() || null,
+    })
+    .eq("id", input.id);
+  if (error) throw error;
 }
 
 export async function updateBlockerStatus(input: { id: string; status: string }) {
@@ -474,6 +526,8 @@ export async function fetchAllBlockers(): Promise<Blocker[]> {
   const { data, error } = await db
     .from("blockers")
     .select("*")
+    .neq("status", "PROPOSÉ")
+    .neq("status", "REFUSÉ")
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as Blocker[];

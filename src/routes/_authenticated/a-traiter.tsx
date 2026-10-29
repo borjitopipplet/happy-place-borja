@@ -6,6 +6,7 @@ import { ErrorSummary, Field, FormActions, Modal, TextArea } from "@/components/
 import { rejectionSchema, validate, type FieldErrors } from "@/lib/manage-schemas";
 import { BrandHeader } from "@/components/brand-header";
 import { Icon } from "@/components/icon";
+import { ProposalsToConfirm } from "@/components/blocker-proposals";
 import { RecipientPicker, forWhomText } from "@/components/recipient-picker";
 import { businessDaysSince, LATE_AFTER_BUSINESS_DAYS } from "@/lib/business-days";
 import { AttachmentLink } from "@/components/attachment-link";
@@ -466,6 +467,8 @@ function ATraiter() {
               ))}
             </div>
           </section>
+
+          <ProposalsToConfirm />
 
           <section className="col-span-12 bg-surface-container-lowest border border-outline-variant rounded-md p-md">
             <div className="flex flex-wrap items-center justify-between gap-xs border-b border-outline-variant pb-sm mb-md">

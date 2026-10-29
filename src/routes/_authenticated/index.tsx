@@ -7,6 +7,7 @@ import { ErrorSummary, Field, FormActions, Modal, TextArea, TextInput } from "@/
 import { rejectionSchema, submissionSchema, validate, type FieldErrors } from "@/lib/manage-schemas";
 import { BrandHeader } from "@/components/brand-header";
 import { Icon } from "@/components/icon";
+import { MyBlockerProposals, ProposeBlockerModal } from "@/components/blocker-proposals";
 import { RecipientPicker, forWhomText } from "@/components/recipient-picker";
 import { MyIdeas } from "@/components/my-ideas";
 import { Tour, type TourStep } from "@/components/tour";
@@ -92,7 +93,7 @@ function tourStepsFor(isStaff: boolean): TourStep[] {
     {
       target: "#tour-blockers",
       title: "Les points bloquants",
-      body: "Ce qui freine les équipes en ce moment, avec son statut. Rien à faire ici, juste suivre l'avancement.",
+      body: "Ce qui freine les équipes en ce moment. Un blocage que tu vois ? Propose-le : le manager de ton équipe le confirme.",
     },
     {
       target: "#tour-my-ideas",
@@ -272,6 +273,7 @@ function ManagerSpace() {
     submit.mutate(result.data);
   }
 
+  const [proposeOpen, setProposeOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   useEffect(() => {
     // Première visite : la visite guidée s'ouvre seule, une fois.
@@ -455,14 +457,24 @@ function ManagerSpace() {
                   PRIORITÉ HAUTE
                 </span>
               </div>
+              <div className="flex flex-wrap items-center gap-xs">
+              <button
+                id="tour-blocker-propose"
+                type="button"
+                onClick={() => setProposeOpen(true)}
+                className="inline-flex min-h-11 items-center gap-xs rounded-md border border-primary px-sm font-label-md text-label-md text-primary hover:bg-surface-container"
+              >
+                <Icon name="add" /> Proposer
+              </button>
               <button
                 type="button"
                 aria-haspopup="dialog"
                 onClick={() => setArchiveOpen(true)}
                 className="min-h-11 px-xs text-primary font-label-sm text-label-sm underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                 VOIR L'ARCHIVE
+                Voir l'archive
               </button>
+              </div>
             </div>
             <div className="space-y-sm">
               {blockers.isError && (
@@ -525,6 +537,7 @@ function ManagerSpace() {
                 );
               })}
             </div>
+            {email && <MyBlockerProposals email={email} />}
           </section>
 
           {/* Indicateurs */}
@@ -587,6 +600,7 @@ function ManagerSpace() {
           </section>
         </div>
       </main>
+      {proposeOpen && <ProposeBlockerModal managerTeams={role === "manager" ? (myTeams.data ?? []) : []} onClose={() => setProposeOpen(false)} />}
       <BlockerArchive open={archiveOpen} onClose={() => setArchiveOpen(false)} />
       <NewsReader news={readingNews} onClose={() => setReadingNews(null)} />
       <SubmissionReader submission={reading} onClose={() => setReading(null)} />

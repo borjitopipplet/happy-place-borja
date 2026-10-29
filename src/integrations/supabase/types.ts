@@ -111,9 +111,13 @@ export type Database = {
       blockers: {
         Row: {
           created_at: string
+          decided_by_name: string | null
+          decision_note: string | null
           department: string
           description: string | null
           id: string
+          proposed_by_email: string | null
+          proposed_team: string | null
           severity: Database["public"]["Enums"]["blocker_severity"]
           status: Database["public"]["Enums"]["blocker_status"]
           title: string
@@ -121,9 +125,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          decided_by_name?: string | null
+          decision_note?: string | null
           department?: string
           description?: string | null
           id?: string
+          proposed_by_email?: string | null
+          proposed_team?: string | null
           severity?: Database["public"]["Enums"]["blocker_severity"]
           status?: Database["public"]["Enums"]["blocker_status"]
           title: string
@@ -131,9 +139,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          decided_by_name?: string | null
+          decision_note?: string | null
           department?: string
           description?: string | null
           id?: string
+          proposed_by_email?: string | null
+          proposed_team?: string | null
           severity?: Database["public"]["Enums"]["blocker_severity"]
           status?: Database["public"]["Enums"]["blocker_status"]
           title?: string
@@ -477,7 +489,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "manager" | "collaborateur"
       blocker_severity: "critical" | "warning" | "info"
-      blocker_status: "OUVERT" | "EN COURS" | "SURVEILLANCE" | "RÉSOLU"
+      blocker_status: "OUVERT" | "EN COURS" | "SURVEILLANCE" | "RÉSOLU" | "PROPOSÉ" | "REFUSÉ"
       news_status: "brouillon" | "publiée"
       rejection_category:
         | "à clarifier"
@@ -614,7 +626,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "manager", "collaborateur"],
       blocker_severity: ["critical", "warning", "info"],
-      blocker_status: ["OUVERT", "EN COURS", "SURVEILLANCE", "RÉSOLU"],
+      blocker_status: ["OUVERT", "EN COURS", "SURVEILLANCE", "RÉSOLU", "PROPOSÉ", "REFUSÉ"],
       news_status: ["brouillon", "publiée"],
       rejection_category: [
         "à clarifier",
