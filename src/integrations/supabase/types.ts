@@ -368,6 +368,7 @@ export type Database = {
             | Database["public"]["Enums"]["rejection_category"]
             | null
           rejection_note: string | null
+          recipient_teams: string[]
           revalidate_at: string | null
           status: Database["public"]["Enums"]["submission_status"]
           submitted_by_email: string | null
@@ -384,6 +385,7 @@ export type Database = {
             | Database["public"]["Enums"]["rejection_category"]
             | null
           rejection_note?: string | null
+          recipient_teams?: string[]
           revalidate_at?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
           submitted_by_email?: string | null
@@ -400,6 +402,7 @@ export type Database = {
             | Database["public"]["Enums"]["rejection_category"]
             | null
           rejection_note?: string | null
+          recipient_teams?: string[]
           revalidate_at?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
           submitted_by_email?: string | null

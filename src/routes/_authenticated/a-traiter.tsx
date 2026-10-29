@@ -333,7 +333,9 @@ function ATraiter() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-body-sm text-primary font-bold wrap-anywhere">{s.author_name}</p>
-                      <p className="text-xs text-on-surface-variant font-label-sm wrap-anywhere">{s.team}</p>
+                      <p className="text-xs text-on-surface-variant font-label-sm wrap-anywhere">
+                        {s.team} · Pour : {s.recipient_teams?.length ? s.recipient_teams.join(", ") : "tout le cabinet"}
+                      </p>
                     </div>
                     <span className="text-xs text-on-surface-variant font-label-sm whitespace-nowrap">
                       {timeAgo(s.created_at)}

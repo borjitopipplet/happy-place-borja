@@ -32,6 +32,7 @@ export type Submission = {
   submitted_by_email?: string | null;
   attachment_path?: string | null;
   attachment_name?: string | null;
+  recipient_teams?: string[];
 };
 
 export const REJECTION_CATEGORIES = [
@@ -313,6 +314,7 @@ export type SubmissionInput = {
   status: string;
   rejection_category?: string | null;
   rejection_note?: string | null;
+  recipient_teams?: string[];
 };
 export type BlockerInput = {
   title: string;
@@ -389,6 +391,12 @@ export async function createSubmission(input: SubmissionInput) {
 export const ATTACHMENT_BUCKET = "submission-attachments";
 export const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
 
+export async function fetchTeamNames(): Promise<string[]> {
+  const { data, error } = await db.from("teams").select("name, is_reserved").order("name");
+  if (error) throw error;
+  return (data ?? []).filter((t) => !t.is_reserved).map((t) => t.name);
+}
+
 export async function submitIdea(input: Omit<SubmissionInput, "status">, file?: File | null) {
   let attachment_path: string | null = null;
   let attachment_name: string | null = null;
@@ -407,6 +415,7 @@ export async function submitIdea(input: Omit<SubmissionInput, "status">, file?: 
   const { error } = await db.from("submissions").insert({
     author_name: input.author_name, team: input.team, content: input.content, status: "en attente",
     attachment_path, attachment_name,
+    recipient_teams: input.recipient_teams ?? [],
   });
   if (error) throw error;
 }

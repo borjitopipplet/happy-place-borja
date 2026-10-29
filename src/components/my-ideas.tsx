@@ -21,6 +21,11 @@ export function StatusPill({ status }: { status: string }) {
   );
 }
 
+function forWhom(s: Submission) {
+  const to = s.recipient_teams ?? [];
+  return `Pour : ${to.length ? to.join(", ") : "tout le cabinet"}`;
+}
+
 /** « Mes idées » : chaque idée s'ouvre pour montrer le texte complet, le statut et, si refusée, le motif. */
 export function MyIdeas({ items }: { items: Submission[] }) {
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -54,7 +59,7 @@ export function MyIdeas({ items }: { items: Submission[] }) {
                   {s.content}
                 </span>
                 <span className="mt-1 block font-label-sm text-label-sm text-on-surface-variant">
-                  {s.team} · {timeAgo(s.created_at)}
+                  {forWhom(s)} · {timeAgo(s.created_at)}
                 </span>
               </span>
               <StatusPill status={s.status} />

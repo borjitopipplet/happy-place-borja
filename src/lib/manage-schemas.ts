@@ -31,6 +31,7 @@ export const submissionSchema = z.object({
   }),
   rejection_category: z.string().nullable().optional(),
   rejection_note: z.string().nullable().optional(),
+  recipient_teams: z.array(z.string()).max(20, "20 équipes maximum").optional(),
 }).superRefine((v, ctx) => {
   if (v.status !== "refusée") return;
   if (!v.rejection_category || !(REJECTION_CATEGORY_VALUES as readonly string[]).includes(v.rejection_category))

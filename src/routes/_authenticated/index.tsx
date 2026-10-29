@@ -18,6 +18,7 @@ import { BlockerArchive, ValidatedSubmissions } from "@/components/dashboard-ext
 import { Button } from "@/components/ui/button";
 import {
   fetchBlockers,
+  fetchTeamNames,
   fetchMetrics,
   deltaText,
   fetchNews,
@@ -155,12 +156,15 @@ function ManagerSpace() {
     queryKey: ["profile", myEmail],
     enabled: !!myEmail,
     queryFn: async () => {
-      const { data, error } = await supabase.from("allowed_users").select("first_name").eq("email", myEmail).maybeSingle();
+      const { data, error } = await supabase.from("allowed_users").select("first_name, last_name").eq("email", myEmail).maybeSingle();
       if (error) throw error;
-      return data?.first_name ?? null;
+      return data;
     },
   });
-  const firstName = profile.data ?? "";
+  const firstName = profile.data?.first_name ?? "";
+  const fullName = [profile.data?.first_name, profile.data?.last_name].filter(Boolean).join(" ") || myName;
+  const teamNames = useQuery({ queryKey: ["teams", "names"], queryFn: fetchTeamNames, retry: false });
+  const [recipientScope, setRecipientScope] = useState<"all" | "teams">("all");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [reading, setReading] = useState<Submission | null>(null);
   const [readingNews, setReadingNews] = useState<News | null>(null);
@@ -197,6 +201,7 @@ function ManagerSpace() {
       author_name: input.author_name,
       team: input.team,
       content: input.content,
+      recipient_teams: input.recipient_teams,
     }, attachment),
     onSuccess: () => {
       setSubmissionForm(null);
@@ -232,7 +237,17 @@ function ManagerSpace() {
     // Collaborators: team is set server-side from their account
     // Admin: always the « Admin » team (set server-side); manager: one of their teams
     const team = role === "collaborateur" ? "auto" : role === "admin" ? "Admin" : submissionForm.team;
-    const result = validate(submissionSchema, { ...submissionForm, team, status: "en attente" });
+    if (recipientScope === "teams" && !submissionForm.recipient_teams?.length) {
+      setSubmissionErrors({ recipient_teams: "Choisis au moins une équipe, ou « Tout le cabinet »." });
+      return;
+    }
+    const result = validate(submissionSchema, {
+      ...submissionForm,
+      author_name: fullName,
+      team,
+      status: "en attente",
+      recipient_teams: recipientScope === "all" ? [] : submissionForm.recipient_teams,
+    });
     if (!result.ok) {
       setSubmissionErrors(result.errors);
       return;
@@ -283,7 +298,8 @@ function ManagerSpace() {
               onClick={() => {
                 setSubmissionErrors({});
                 const only = role === "manager" && myTeams.data?.length === 1 ? myTeams.data[0] : "";
-                setSubmissionForm({ author_name: "", team: only, content: "", status: "en attente" });
+                setRecipientScope("all");
+                setSubmissionForm({ author_name: "", team: only, content: "", status: "en attente", recipient_teams: [] });
               }}
               className="inline-flex min-h-11 items-center gap-xs rounded-md bg-primary px-md py-xs font-label-md text-label-md text-on-primary hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
@@ -528,17 +544,19 @@ function ManagerSpace() {
       <NewsReader news={readingNews} onClose={() => setReadingNews(null)} />
       <SubmissionReader submission={reading} onClose={() => setReading(null)} />
       {submissionForm && (
-        <Modal title="Soumettre une proposition" onClose={() => setSubmissionForm(null)}>
+        <Modal title="Soumettre une idée" onClose={() => setSubmissionForm(null)}>
           <form onSubmit={sendSubmission} className="space-y-sm" noValidate>
             <ErrorSummary errors={submissionErrors} />
-            <Field label="Nom" error={submissionErrors.author_name}>
-              <TextInput
-                value={submissionForm.author_name}
-                maxLength={80}
-                placeholder="Ton nom"
-                onChange={(e) => setSubmissionForm({ ...submissionForm, author_name: e.target.value })}
-              />
-            </Field>
+            <div className="grid grid-cols-1 gap-sm sm:grid-cols-2">
+              <div>
+                <p className="font-label-md text-label-md text-on-surface-variant">Nom</p>
+                <p className="mt-1 min-h-11 rounded-md bg-surface-container px-sm py-xs font-body-md text-primary">{fullName}</p>
+              </div>
+              <div>
+                <p className="font-label-md text-label-md text-on-surface-variant">Email de contact</p>
+                <p className="mt-1 min-h-11 rounded-md bg-surface-container px-sm py-xs font-body-md text-primary wrap-anywhere">{email}</p>
+              </div>
+            </div>
             {role === "manager" && (
               <Field label="Équipe" error={submissionErrors.team}>
                 <select
@@ -557,6 +575,51 @@ function ManagerSpace() {
             {role === "admin" && (
               <p className="text-body-sm text-on-surface-variant">Équipe : Admin</p>
             )}
+            <fieldset className="space-y-xs">
+              <legend className="font-label-md text-label-md text-on-surface-variant">Pour qui ?</legend>
+              <label className="flex min-h-11 items-center gap-xs font-body-md">
+                <input
+                  type="radio"
+                  name="recipient-scope"
+                  checked={recipientScope === "all"}
+                  onChange={() => setRecipientScope("all")}
+                />
+                Tout le cabinet
+              </label>
+              <label className="flex min-h-11 items-center gap-xs font-body-md">
+                <input
+                  type="radio"
+                  name="recipient-scope"
+                  checked={recipientScope === "teams"}
+                  onChange={() => setRecipientScope("teams")}
+                />
+                Une ou plusieurs équipes
+              </label>
+              {recipientScope === "teams" && (
+                <div className="grid grid-cols-1 gap-x-sm sm:grid-cols-2">
+                  {(teamNames.data ?? []).map((t) => (
+                    <label key={t} className="flex min-h-11 items-center gap-xs font-body-md">
+                      <input
+                        type="checkbox"
+                        checked={submissionForm.recipient_teams?.includes(t) ?? false}
+                        onChange={(e) =>
+                          setSubmissionForm({
+                            ...submissionForm,
+                            recipient_teams: e.target.checked
+                              ? [...(submissionForm.recipient_teams ?? []), t]
+                              : (submissionForm.recipient_teams ?? []).filter((x) => x !== t),
+                          })
+                        }
+                      />
+                      {t}
+                    </label>
+                  ))}
+                </div>
+              )}
+              {submissionErrors.recipient_teams && (
+                <p role="alert" className="text-body-sm text-error">{submissionErrors.recipient_teams}</p>
+              )}
+            </fieldset>
             <Field label="Proposition" error={submissionErrors.content}>
               <TextArea
                 rows={5}
