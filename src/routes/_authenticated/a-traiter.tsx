@@ -1,11 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ErrorSummary, Field, FormActions, Modal, TextArea } from "@/components/manage/crud-ui";
 import { rejectionSchema, validate, type FieldErrors } from "@/lib/manage-schemas";
 import { BrandHeader } from "@/components/brand-header";
 import { Icon } from "@/components/icon";
+import { businessDaysSince, LATE_AFTER_BUSINESS_DAYS } from "@/lib/business-days";
 import { AttachmentLink } from "@/components/attachment-link";
 import { CharCounter, SubmissionPreview, rejectionErrorMessage } from "@/components/expandable-card";
 import { SubmissionReader } from "@/components/submission-reader";
@@ -105,16 +106,60 @@ function ATraiter() {
   const review = useMutation({
     mutationFn: reviewSubmission,
     onSuccess: (_d, vars) => {
-      if (vars.status === "refusée") {
-        setRejecting(null);
-        toast.success("Soumission refusée");
-      } else {
-        setReading((r) => (r?.id === vars.id ? null : r));
-      }
+      setReading((r) => (r?.id === vars.id ? null : r));
       qc.invalidateQueries({ queryKey: ["submissions"] });
     },
     onError: (e: unknown) => toast.error(rejectionErrorMessage(e)),
   });
+
+  // Décision différée de 8 s : le temps d'annuler. Si on quitte la page, les décisions en cours partent tout de suite.
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const timers = useRef(new Map<string, { vars: Parameters<typeof reviewSubmission>[0]; timer: ReturnType<typeof setTimeout> }>());
+  useEffect(() => {
+    const current = timers.current;
+    return () => {
+      for (const { vars, timer } of current.values()) {
+        clearTimeout(timer);
+        reviewSubmission(vars).catch(() => {});
+      }
+      current.clear();
+    };
+  }, []);
+
+  function decide(vars: Parameters<typeof reviewSubmission>[0], label: string) {
+    const settle = () => {
+      timers.current.delete(vars.id);
+      setPendingIds((p) => {
+        const n = new Set(p);
+        n.delete(vars.id);
+        return n;
+      });
+    };
+    setPendingIds((p) => new Set(p).add(vars.id));
+    setReading(null);
+    setRejecting(null);
+    const timer = setTimeout(() => {
+      review.mutate(vars, { onSettled: settle });
+    }, 8000);
+    timers.current.set(vars.id, { vars, timer });
+    toast(label, {
+      duration: 8000,
+      action: {
+        label: "Annuler",
+        onClick: () => {
+          clearTimeout(timer);
+          settle();
+        },
+      },
+    });
+  }
+
+  function copyEmail(email: string) {
+    navigator.clipboard
+      ?.writeText(email)
+      .then(() => toast.success("Email copié"))
+      .catch(() => toast.error("Copie impossible : sélectionne l'adresse à la main."));
+  }
 
   function startReject(s: Submission) {
     setReading(null);
@@ -122,6 +167,11 @@ function ATraiter() {
     setRejectErrors({});
     setRejectForm({ rejection_category: "", rejection_note: "" });
   }
+
+  // Les plus anciennes d'abord ; celles qu'on vient de décider (annulables) disparaissent de la liste.
+  const waiting = (submissions.data ?? [])
+    .filter((s) => !pendingIds.has(s.id))
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
 
   const visibleDrafts = news.data?.filter((n) => n.status === "brouillon") ?? [];
   const drafts = visibleDrafts.length;
@@ -305,10 +355,10 @@ function ATraiter() {
           <section className="col-span-12 lg:col-span-4 min-w-0 bg-surface-container-lowest border border-outline-variant p-md flex flex-col">
             <div className="flex items-center justify-between border-b border-outline-variant pb-sm mb-md">
               <h2 className="font-headline-sm text-headline-sm text-primary">
-                Soumissions en attente
+                Idées en attente
               </h2>
               <div className="bg-tertiary-fixed text-on-tertiary-fixed px-xs py-1 rounded-full font-label-sm text-label-sm">
-                {submissions.data?.length ?? 0} NOUVELLES
+                {waiting.length} en attente
               </div>
             </div>
             <div className="space-y-sm flex-grow min-w-0">
@@ -317,12 +367,12 @@ function ATraiter() {
                   Les soumissions sont indisponibles.
                 </p>
               )}
-              {submissions.data?.length === 0 && (
+              {waiting.length === 0 && !submissions.isError && (
                 <p className="text-body-sm text-on-surface-variant italic">
-                  Aucune soumission en attente.
+                  Aucune idée en attente. Bravo, la file est vide.
                 </p>
               )}
-              {submissions.data?.map((s) => (
+              {waiting.map((s) => (
                 <div
                   key={s.id}
                   className="p-sm border border-outline-variant bg-card space-y-sm min-w-0 overflow-hidden"
@@ -341,6 +391,25 @@ function ATraiter() {
                       {timeAgo(s.created_at)}
                     </span>
                   </div>
+                  {businessDaysSince(s.created_at) > LATE_AFTER_BUSINESS_DAYS && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-error-container px-sm py-0.5 font-label-sm text-label-sm text-on-error-container">
+                      <span aria-hidden="true" className="size-2 rounded-full bg-error" />
+                      En retard · {businessDaysSince(s.created_at)} jours ouvrés
+                    </span>
+                  )}
+                  {s.submitted_by_email && (
+                    <div className="flex items-center gap-xs font-label-sm text-label-sm text-on-surface-variant">
+                      <span className="min-w-0 wrap-anywhere">{s.submitted_by_email}</span>
+                      <button
+                        type="button"
+                        onClick={() => copyEmail(s.submitted_by_email!)}
+                        aria-label={`Copier l'email de ${s.author_name}`}
+                        className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-primary hover:bg-surface-container"
+                      >
+                        <Icon name="content_copy" />
+                      </button>
+                    </div>
+                  )}
                   <SubmissionPreview content={s.content} onOpen={() => setReading(s)} />
                   <AttachmentLink path={s.attachment_path} name={s.attachment_name} />
                   {canReview && <div className="flex gap-xs pt-xs">
@@ -351,7 +420,7 @@ function ATraiter() {
                       REFUSER
                     </button>
                     <button
-                      onClick={() => review.mutate({ id: s.id, status: "validée" })}
+                      onClick={() => decide({ id: s.id, status: "validée" }, "Idée validée")}
                       className="min-h-11 flex-1 rounded-md bg-primary text-on-primary font-label-md text-label-md hover:opacity-90 transition-colors"
                     >
                       VALIDER
@@ -369,7 +438,7 @@ function ATraiter() {
         onReject={reading && canReview && reading.status === "en attente" ? () => startReject(reading) : undefined}
         onApprove={
           reading && canReview && reading.status === "en attente"
-            ? () => review.mutate({ id: reading.id, status: "validée" })
+            ? () => decide({ id: reading.id, status: "validée" }, "Idée validée")
             : undefined
         }
         approving={review.isPending}
@@ -384,7 +453,7 @@ function ATraiter() {
               const res = validate(rejectionSchema, rejectForm);
               if (!res.ok) return setRejectErrors(res.errors);
               setRejectErrors({});
-              review.mutate({ id: rejecting.id, status: "refusée", ...res.data });
+              decide({ id: rejecting.id, status: "refusée", ...res.data }, "Idée refusée");
             }}
           >
             <p className="max-h-48 overflow-y-auto border border-outline-variant bg-surface-container-low p-xs text-body-sm italic text-on-surface-variant whitespace-pre-line wrap-anywhere">“{rejecting.content}”</p>
