@@ -16,6 +16,8 @@ import { emptyMedia, linkErrors, mediaFromNews, toNewsLinks, type MediaDraft } f
 import {
   fetchNews,
   fetchTeamNames,
+  fetchBlockers,
+  updateBlockerStatus,
   fetchSubmissions,
   REJECTION_CATEGORIES,
   type Submission,
@@ -75,6 +77,16 @@ function ATraiter() {
     retry: false,
   });
   const onError = (e: unknown) => toast.error((e as Error).message);
+  const blockers = useQuery({ queryKey: ["blockers"], queryFn: fetchBlockers, retry: false });
+  const STALE_DAYS = 7;
+  const stale = (blockers.data ?? [])
+    .filter((b) => Date.now() - new Date(b.updated_at).getTime() > STALE_DAYS * 86400000)
+    .sort((a, b) => a.updated_at.localeCompare(b.updated_at));
+  const setBlocker = useMutation({
+    mutationFn: updateBlockerStatus,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["blockers"] }),
+    onError,
+  });
 
   const saveDraft = useMutation({
     mutationFn: saveDraftNews,
@@ -453,6 +465,53 @@ function ATraiter() {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section className="col-span-12 bg-surface-container-lowest border border-outline-variant rounded-md p-md">
+            <div className="flex flex-wrap items-center justify-between gap-xs border-b border-outline-variant pb-sm mb-md">
+              <h2 className="font-headline-sm text-headline-sm text-primary">
+                Points bloquants sans mise à jour depuis plus de {STALE_DAYS} jours
+              </h2>
+              <span className="font-label-sm text-label-sm text-on-surface-variant">{stale.length} à relancer</span>
+            </div>
+            {blockers.isError && <p className="text-body-sm text-error">Les points bloquants sont indisponibles.</p>}
+            {!blockers.isLoading && !blockers.isError && stale.length === 0 && (
+              <p className="text-body-sm text-on-surface-variant italic">
+                Tous les points bloquants ont été mis à jour cette semaine. Bravo.
+              </p>
+            )}
+            <ul className="space-y-xs">
+              {stale.map((b) => (
+                <li
+                  key={b.id}
+                  className="flex flex-wrap items-center justify-between gap-sm rounded-md border border-outline-variant bg-card p-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="font-body-md font-bold text-primary wrap-anywhere">{b.title}</p>
+                    <p className="font-label-sm text-label-sm text-on-surface-variant">
+                      {b.department} · {b.status} · mis à jour {timeAgo(b.updated_at)}
+                    </p>
+                  </div>
+                  {isAdmin ? (
+                    <select
+                      aria-label={`Statut de ${b.title}`}
+                      value={b.status}
+                      onChange={(e) => setBlocker.mutate({ id: b.id, status: e.target.value })}
+                      className="min-h-11 rounded-md border border-outline-variant bg-card px-xs font-label-sm text-primary"
+                    >
+                      <option>OUVERT</option>
+                      <option>EN COURS</option>
+                      <option>SURVEILLANCE</option>
+                      <option disabled={b.status === "OUVERT"}>RÉSOLU</option>
+                    </select>
+                  ) : (
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">
+                      À relancer auprès d'un admin
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
           </section>
         </div>
       </main>
