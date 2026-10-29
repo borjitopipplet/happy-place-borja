@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ErrorSummary, Field, FormActions, Modal, TextArea, TextInput } from "@/components/manage/crud-ui";
 import { rejectionSchema, submissionSchema, validate, type FieldErrors } from "@/lib/manage-schemas";
 import { BrandHeader } from "@/components/brand-header";
 import { Icon } from "@/components/icon";
 import { MyIdeas } from "@/components/my-ideas";
+import { Tour, type TourStep } from "@/components/tour";
 import { CharCounter, rejectionErrorMessage } from "@/components/expandable-card";
 import { SubmissionReader } from "@/components/submission-reader";
 import { NewsReader } from "@/components/news-reader";
@@ -60,6 +61,47 @@ export const Route = createFileRoute("/_authenticated/")({
   }),
   component: ManagerSpace,
 });
+
+const TOUR_KEY = "hp-visite-v2";
+
+function tourStepsFor(isStaff: boolean): TourStep[] {
+  return [
+    {
+      target: "#tour-new-idea",
+      title: "Une idée pour le cabinet ?",
+      body: "Écris-la ici. Ton manager la reçoit, et tu retrouves sa réponse plus bas, dans « Mes idées ».",
+    },
+    ...(isStaff
+      ? [
+          {
+            target: "#tour-nav-traiter",
+            title: "Ton espace « À traiter »",
+            body: "Les idées en attente et les actualités à rédiger ou publier sont ici. Ouvre-le dès que tu as dix minutes.",
+          },
+        ]
+      : []),
+    {
+      target: "#tour-news",
+      title: "Les actualités du cabinet",
+      body: "Ce qui a été décidé et publié. Clique sur une actualité pour la lire en entier.",
+    },
+    {
+      target: "#tour-blockers",
+      title: "Les points bloquants",
+      body: "Ce qui freine les équipes en ce moment, avec son statut. Rien à faire ici, juste suivre l'avancement.",
+    },
+    {
+      target: "#tour-my-ideas",
+      title: "Mes idées",
+      body: "Chaque idée s'ouvre pour montrer son statut et, si elle est refusée, le motif.",
+    },
+    {
+      target: "#tour-account",
+      title: "Ton compte",
+      body: "Tu peux te déconnecter ou changer de rôle ici. Tu peux relancer cette visite à tout moment.",
+    },
+  ];
+}
 
 function trendText(m: Metric | undefined) {
   return m ? TREND_LABELS[m.trend] : "";
@@ -199,9 +241,32 @@ function ManagerSpace() {
     submit.mutate(result.data);
   }
 
+  const [tourOpen, setTourOpen] = useState(false);
+  useEffect(() => {
+    // Première visite : la visite guidée s'ouvre seule, une fois.
+    // Petit délai : l'en-tête et les listes doivent être affichés pour que les bulles trouvent leur cible.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      if (!localStorage.getItem(TOUR_KEY)) timer = setTimeout(() => setTourOpen(true), 1500);
+    } catch {
+      /* stockage indisponible : la visite reste accessible par le bouton */
+    }
+    return () => clearTimeout(timer);
+  }, []);
+  function closeTour() {
+    setTourOpen(false);
+    try {
+      localStorage.setItem(TOUR_KEY, "1");
+    } catch {
+      /* ignoré */
+    }
+  }
+  const tourSteps = tourStepsFor(canReview);
+
   return (
     <div className="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
       <BrandHeader />
+      <Tour steps={tourSteps} open={tourOpen} onClose={closeTour} />
       <main className="flex-grow w-full max-w-interface mx-auto p-sm md:p-md space-y-md">
         {email && <DepartureNotices email={email} />}
         <div className="flex flex-col gap-sm md:flex-row md:items-end md:justify-between">
@@ -233,12 +298,22 @@ function ManagerSpace() {
             >
               <Icon name="file_download" /> {exportReport.isPending ? "Export en cours…" : "Exporter le rapport"}
             </Button>
+            <button
+              type="button"
+              onClick={() => setTourOpen(true)}
+              className="inline-flex min-h-11 items-center gap-xs rounded-md px-sm font-label-md text-label-md text-primary underline-offset-2 hover:underline"
+            >
+              <Icon name="help" /> Visite guidée
+            </button>
           </div>
         </div>
 
         <div className="bento-grid">
           {/* Actualités publiées */}
-          <section className="col-span-12 bg-surface-container-lowest border border-outline-variant p-md flex flex-col gap-md">
+          <section
+            id="tour-news"
+            className="col-span-12 bg-surface-container-lowest border border-outline-variant p-md flex flex-col gap-md"
+          >
             <div className="flex items-center justify-between border-b border-outline-variant pb-sm">
               <h2 className="font-headline-sm text-headline-sm text-primary">
                 Actualités du cabinet
@@ -306,7 +381,10 @@ function ManagerSpace() {
           />
 
           {/* Points Bloquants */}
-          <section className="col-span-12 md:col-span-7 bg-surface-container-lowest border border-outline-variant p-md">
+          <section
+            id="tour-blockers"
+            className="col-span-12 md:col-span-7 bg-surface-container-lowest border border-outline-variant p-md"
+          >
             <div className="flex items-center justify-between mb-md">
               <div className="flex items-center gap-sm">
                 <h2 className="font-headline-sm text-headline-sm text-primary">Points Bloquants</h2>

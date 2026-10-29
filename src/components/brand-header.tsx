@@ -51,7 +51,7 @@ export function BrandHeader() {
               <Link to="/" activeOptions={{ exact: true }} activeProps={navActive} className={navLink}>
                 Accueil
               </Link>
-              <Link to="/a-traiter" activeProps={navActive} className={navLink}>
+              <Link id="tour-nav-traiter" to="/a-traiter" activeProps={navActive} className={navLink}>
                 À traiter
               </Link>
               {role.data === "admin" && (
@@ -62,7 +62,7 @@ export function BrandHeader() {
             </nav>
           )}
         </div>
-        <div className="flex items-center gap-md">
+        <div id="tour-account" className="flex items-center gap-md">
           {signedIn && pathname !== "/choisir-role" && (
             <Link
               to="/choisir-role"
