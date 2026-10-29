@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import {
   fetchBlockers,
   fetchTeamNames,
+  ATTACHMENT_TYPES,
   fetchMetrics,
   deltaText,
   fetchNews,
@@ -629,15 +630,15 @@ function ManagerSpace() {
               />
               <CharCounter value={submissionForm.content} max={2000} min={5} />
             </Field>
-            <Field label="Document PDF (optionnel, 20 Mo max)" error={submissionErrors.attachment}>
+            <Field label="Pièce jointe (optionnelle : PDF, PNG ou JPG, 20 Mo max)" error={submissionErrors.attachment}>
               <input
                 type="file"
-                accept="application/pdf,.pdf"
+                accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg"
                 className="block w-full text-body-sm"
                 onChange={(e) => {
                   const f = e.target.files?.[0] ?? null;
-                  if (f && f.type !== "application/pdf") {
-                    setSubmissionErrors({ ...submissionErrors, attachment: "Seuls les fichiers PDF sont acceptés." });
+                  if (f && !(f.type in ATTACHMENT_TYPES)) {
+                    setSubmissionErrors({ ...submissionErrors, attachment: "Seuls les fichiers PDF, PNG et JPG sont acceptés." });
                     e.target.value = ""; setAttachment(null); return;
                   }
                   if (f && f.size > 20 * 1024 * 1024) {

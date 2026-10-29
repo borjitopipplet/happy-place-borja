@@ -390,6 +390,11 @@ export async function createSubmission(input: SubmissionInput) {
 
 export const ATTACHMENT_BUCKET = "submission-attachments";
 export const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+export const ATTACHMENT_TYPES: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/png": "png",
+  "image/jpeg": "jpg",
+};
 
 export async function fetchTeamNames(): Promise<string[]> {
   const { data, error } = await db.from("teams").select("name, is_reserved").order("name");
@@ -401,15 +406,16 @@ export async function submitIdea(input: Omit<SubmissionInput, "status">, file?: 
   let attachment_path: string | null = null;
   let attachment_name: string | null = null;
   if (file) {
-    if (file.type !== "application/pdf") throw new Error("Seuls les fichiers PDF sont acceptés.");
+    const ext = ATTACHMENT_TYPES[file.type];
+    if (!ext) throw new Error("Seuls les fichiers PDF, PNG et JPG sont acceptés.");
     if (file.size > MAX_ATTACHMENT_BYTES) throw new Error("Le fichier dépasse 20 Mo.");
     const { data: u } = await db.auth.getUser();
     if (!u.user) throw new Error("Session expirée");
-    attachment_path = `${u.user.id}/${crypto.randomUUID()}.pdf`;
+    attachment_path = `${u.user.id}/${crypto.randomUUID()}.${ext}`;
     attachment_name = file.name.slice(0, 200);
     const { error: upErr } = await db.storage
       .from(ATTACHMENT_BUCKET)
-      .upload(attachment_path, file, { contentType: "application/pdf" });
+      .upload(attachment_path, file, { contentType: file.type });
     if (upErr) throw upErr;
   }
   const { error } = await db.from("submissions").insert({
