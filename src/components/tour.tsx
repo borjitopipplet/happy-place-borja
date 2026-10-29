@@ -18,12 +18,15 @@ export function Tour({ steps, open, onClose }: { steps: TourStep[]; open: boolea
   const bubbleRef = useRef<HTMLDivElement>(null);
   const step = visible[index];
 
-  // À l'ouverture : ne garder que les étapes dont la cible existe.
+  // À l'ouverture seulement : ne garder que les étapes dont la cible existe.
+  // Les pages recréent la liste à chaque rendu : la lire via une ref évite de revenir à l'étape 1.
+  const stepsRef = useRef(steps);
+  stepsRef.current = steps;
   useEffect(() => {
     if (!open) return;
-    setVisible(steps.filter((s) => document.querySelector(s.target)));
+    setVisible(stepsRef.current.filter((s) => document.querySelector(s.target)));
     setIndex(0);
-  }, [open, steps]);
+  }, [open]);
 
   const measure = useCallback(() => {
     if (!step) return;

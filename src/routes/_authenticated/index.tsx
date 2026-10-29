@@ -24,6 +24,7 @@ import {
   fetchTeamNames,
   fetchDecisions,
   ATTACHMENT_TYPES,
+  MAX_ATTACHMENT_BYTES,
   fetchMetrics,
   deltaText,
   fetchNews,
@@ -568,7 +569,7 @@ function ManagerSpace() {
           </section>
         </div>
       </main>
-      {proposeOpen && <ProposeBlockerModal managerTeams={role === "manager" ? (myTeams.data ?? []) : []} onClose={() => setProposeOpen(false)} />}
+      {proposeOpen && <ProposeBlockerModal teams={role === "manager" ? (myTeams.data ?? []) : role === "admin" ? (teamNames.data ?? []) : []} onClose={() => setProposeOpen(false)} />}
       <BlockerArchive open={archiveOpen} onClose={() => setArchiveOpen(false)} />
       <NewsReader news={readingNews} onClose={() => setReadingNews(null)} />
       <SubmissionReader submission={reading} onClose={() => setReading(null)} />
@@ -633,7 +634,7 @@ function ManagerSpace() {
                     setSubmissionErrors({ ...submissionErrors, attachment: "Seuls les fichiers PDF, PNG et JPG sont acceptés." });
                     e.target.value = ""; setAttachment(null); return;
                   }
-                  if (f && f.size > 20 * 1024 * 1024) {
+                  if (f && f.size > MAX_ATTACHMENT_BYTES) {
                     setSubmissionErrors({ ...submissionErrors, attachment: "Le fichier dépasse 20 Mo." });
                     e.target.value = ""; setAttachment(null); return;
                   }

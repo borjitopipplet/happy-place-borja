@@ -66,9 +66,10 @@ export function MyIdeas({ items, decisions = {} }: { items: Submission[]; decisi
                   <Linkify text={s.content} />
                 </p>
                 <AttachmentLink path={s.attachment_path} name={s.attachment_name} />
-                {decisions[s.id] && (
+                {/* Une idée remise en attente garde sa décision passée dans l'historique : on ne l'affiche pas. */}
+                {decisions[s.id] && decisions[s.id].new_status === s.status && (
                   <p className="font-label-sm text-label-sm text-on-surface-variant">
-                    {s.status === "validée" ? "Validée" : "Refusée"}
+                    {decisions[s.id].new_status === "validée" ? "Validée" : "Refusée"}
                     {decisions[s.id].is_automatic || !decisions[s.id].changed_by_name
                       ? ""
                       : ` par ${decisions[s.id].changed_by_name}`}{" "}

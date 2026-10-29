@@ -51,8 +51,6 @@ function ATraiter() {
   const qc = useQueryClient();
   const { role, email, user } = Route.useRouteContext();
   const isAdmin = role === "admin";
-  const canWriteNews = true;
-  const canReview = true;
   const myEmail = (email ?? "").toLowerCase();
   const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
   const myName =
@@ -125,44 +123,61 @@ function ATraiter() {
     onError,
   });
 
-  const review = useMutation({
-    mutationFn: reviewSubmission,
-    onSuccess: (_d, vars) => {
-      setReading((r) => (r?.id === vars.id ? null : r));
-      qc.invalidateQueries({ queryKey: ["submissions"] });
-    },
-    onError: (e: unknown) => toast.error(rejectionErrorMessage(e)),
-  });
-
   // Décision différée de 8 s : le temps d'annuler. Si on quitte la page, les décisions en cours partent tout de suite.
+  type ReviewVars = Parameters<typeof reviewSubmission>[0];
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
-  const timers = useRef(new Map<string, { vars: Parameters<typeof reviewSubmission>[0]; timer: ReturnType<typeof setTimeout> }>());
+  const timers = useRef(new Map<string, { vars: ReviewVars; timer: ReturnType<typeof setTimeout> }>());
+  const unpend = (id: string) =>
+    setPendingIds((p) => {
+      const n = new Set(p);
+      n.delete(id);
+      return n;
+    });
+
+  // Chaque décision a son propre suivi : plusieurs envois peuvent se chevaucher sans se perdre.
+  async function send(vars: ReviewVars) {
+    timers.current.delete(vars.id);
+    try {
+      await reviewSubmission(vars);
+    } catch (e) {
+      toast.error(rejectionErrorMessage(e));
+    } finally {
+      unpend(vars.id);
+      qc.invalidateQueries({ queryKey: ["submissions"] });
+    }
+  }
+
   useEffect(() => {
     const current = timers.current;
-    return () => {
+    const flush = () => {
       for (const { vars, timer } of current.values()) {
         clearTimeout(timer);
         reviewSubmission(vars).catch(() => {});
       }
       current.clear();
     };
-  }, []);
-
-  function decide(vars: Parameters<typeof reviewSubmission>[0], label: string) {
-    const settle = () => {
-      timers.current.delete(vars.id);
-      setPendingIds((p) => {
-        const n = new Set(p);
-        n.delete(vars.id);
-        return n;
-      });
+    // Fermeture de l'onglet ou rechargement : on prévient, puis on envoie ce qui reste.
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!current.size) return;
+      e.preventDefault();
+      e.returnValue = "";
     };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("pagehide", flush);
+      const hadPending = current.size > 0;
+      flush();
+      if (hadPending) qc.invalidateQueries({ queryKey: ["submissions"] });
+    };
+  }, [qc]);
+
+  function decide(vars: ReviewVars, label: string) {
     setPendingIds((p) => new Set(p).add(vars.id));
     setReading(null);
     setRejecting(null);
-    const timer = setTimeout(() => {
-      review.mutate(vars, { onSettled: settle });
-    }, 8000);
+    const timer = setTimeout(() => void send(vars), 8000);
     timers.current.set(vars.id, { vars, timer });
     toast(label, {
       duration: 8000,
@@ -170,7 +185,8 @@ function ATraiter() {
         label: "Annuler",
         onClick: () => {
           clearTimeout(timer);
-          settle();
+          timers.current.delete(vars.id);
+          unpend(vars.id);
         },
       },
     });
@@ -246,7 +262,7 @@ function ATraiter() {
                 {drafts} brouillon{drafts > 1 ? "s" : ""} en attente
               </span>
             </div>
-            {canWriteNews && <form
+            <form
               className="space-y-md"
               onSubmit={(e) => {
                 e.preventDefault();
@@ -341,9 +357,9 @@ function ATraiter() {
                   </button>
                 </div>
               </div>
-            </form>}
+            </form>
             <div className="mt-md pt-md border-t border-outline-variant">
-              {canWriteNews && visibleDrafts.length > 0 && (
+              {visibleDrafts.length > 0 && (
                 <>
                   <h3 className="font-label-md text-label-md text-on-surface-variant mb-sm">
                     BROUILLONS
@@ -457,7 +473,7 @@ function ATraiter() {
                     <div className="min-w-0 flex-1">
                       <p className="font-body-sm text-primary font-bold wrap-anywhere">{s.author_name}</p>
                       <p className="text-xs text-on-surface-variant font-label-sm wrap-anywhere">
-                        {s.team} · Pour : {s.recipient_teams?.length ? s.recipient_teams.join(", ") : "tout le cabinet"}
+                        {s.team} · {forWhomText(s.recipient_teams)}
                       </p>
                     </div>
                     <span className="text-xs text-on-surface-variant font-label-sm whitespace-nowrap">
@@ -485,7 +501,7 @@ function ATraiter() {
                   )}
                   <SubmissionPreview content={s.content} onOpen={() => setReading(s)} />
                   <AttachmentLink path={s.attachment_path} name={s.attachment_name} />
-                  {canReview && <div id={idx === 0 ? "tour-decision" : undefined} className="flex gap-xs pt-xs">
+                  <div id={idx === 0 ? "tour-decision" : undefined} className="flex gap-xs pt-xs">
                     <button
                       onClick={() => startReject(s)}
                       className="min-h-11 flex-1 rounded-md border border-primary text-primary font-label-md text-label-md hover:bg-surface-container transition-colors"
@@ -498,13 +514,13 @@ function ATraiter() {
                     >
                       VALIDER
                     </button>
-                  </div>}
+                  </div>
                 </div>
               ))}
             </div>
           </section>
 
-          <ProposalsToConfirm />
+          <ProposalsToConfirm email={myEmail} />
 
           <section
             id="tour-traiter-stale"
@@ -560,13 +576,12 @@ function ATraiter() {
       <SubmissionReader
         submission={reading}
         onClose={() => setReading(null)}
-        onReject={reading && canReview && reading.status === "en attente" ? () => startReject(reading) : undefined}
+        onReject={reading && reading.status === "en attente" ? () => startReject(reading) : undefined}
         onApprove={
-          reading && canReview && reading.status === "en attente"
+          reading && reading.status === "en attente"
             ? () => decide({ id: reading.id, status: "validée" }, "Idée validée")
             : undefined
         }
-        approving={review.isPending}
       />
       {rejecting && (
         <Modal title="Refuser la soumission" onClose={() => setRejecting(null)}>
@@ -604,7 +619,7 @@ function ATraiter() {
               />
               <CharCounter value={rejectForm.rejection_note} max={500} />
             </Field>
-            <FormActions pending={review.isPending} onCancel={() => setRejecting(null)} />
+            <FormActions pending={false} onCancel={() => setRejecting(null)} />
           </form>
         </Modal>
       )}

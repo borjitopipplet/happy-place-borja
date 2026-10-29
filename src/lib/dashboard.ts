@@ -336,15 +336,18 @@ export async function decideBlockerProposal(input: {
   severity: string;
   decision_note?: string;
 }) {
-  const { error } = await db
+  const { data, error } = await db
     .from("blockers")
     .update({
       status: input.status,
       severity: input.severity as Enums["blocker_severity"],
       decision_note: input.decision_note?.trim() || null,
     })
-    .eq("id", input.id);
+    .eq("id", input.id)
+    .select("id");
   if (error) throw error;
+  // Aucune ligne modifiée : la proposition a déjà été traitée, ou elle n'est plus de ton ressort.
+  if (!data?.length) throw new Error("Cette proposition a déjà été traitée. La liste a été actualisée.");
 }
 
 export async function updateBlockerStatus(input: { id: string; status: string }) {

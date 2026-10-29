@@ -33,14 +33,15 @@ function SeveritySelect({ value, onChange, label }: { value: string; onChange: (
 
 /** Formulaire « Proposer un point bloquant » : la priorité est une suggestion, le manager confirme. */
 export function ProposeBlockerModal({
-  managerTeams,
+  teams,
   onClose,
 }: {
-  managerTeams: string[];
+  /** Équipes possibles : celles du manager, ou toutes pour un admin. Vide pour un collaborateur (son équipe est déduite). */
+  teams: string[];
   onClose: () => void;
 }) {
   const qc = useQueryClient();
-  const [form, setForm] = useState({ title: "", description: "", severity: "warning", team: managerTeams[0] ?? "" });
+  const [form, setForm] = useState({ title: "", description: "", severity: "warning", team: teams.length === 1 ? teams[0] : "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const send = useMutation({
     mutationFn: proposeBlocker,
@@ -58,14 +59,14 @@ export function ProposeBlockerModal({
     if (form.title.trim().length < 5) errs.title = "5 caractères minimum";
     if (form.title.trim().length > 120) errs.title = "120 caractères maximum";
     if (form.description.length > 1000) errs.description = "1 000 caractères maximum";
-    if (managerTeams.length > 1 && !form.team) errs.team = "Choisis une équipe";
+    if (teams.length > 0 && !form.team) errs.team = "Choisis une équipe";
     setErrors(errs);
     if (Object.keys(errs).length) return;
     send.mutate({
       title: form.title.trim(),
       description: form.description.trim(),
       severity: form.severity,
-      team: managerTeams.length ? form.team : undefined,
+      team: teams.length ? form.team : undefined,
     });
   }
 
@@ -92,14 +93,15 @@ export function ProposeBlockerModal({
         <Field label="Priorité suggérée">
           <SeveritySelect label="Priorité suggérée" value={form.severity} onChange={(v) => setForm({ ...form, severity: v })} />
         </Field>
-        {managerTeams.length > 1 && (
+        {teams.length > 1 && (
           <Field label="Équipe" error={errors.team}>
             <select
               value={form.team}
               onChange={(e) => setForm({ ...form, team: e.target.value })}
               className="min-h-11 w-full rounded-md border border-outline-variant bg-surface px-sm font-body-md"
             >
-              {managerTeams.map((t) => (
+              <option value="">Choisis une équipe</option>
+              {teams.map((t) => (
                 <option key={t}>{t}</option>
               ))}
             </select>
@@ -146,7 +148,7 @@ export function MyBlockerProposals({ email }: { email: string }) {
 }
 
 /** Côté manager / admin : confirmer (avec la priorité de son choix) ou refuser (raison obligatoire). */
-export function ProposalsToConfirm() {
+export function ProposalsToConfirm({ email }: { email: string }) {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["blocker_proposals"], queryFn: fetchBlockerProposals, retry: false });
   const pending = (q.data ?? []).filter((b) => b.status === "PROPOSÉ");
@@ -163,7 +165,11 @@ export function ProposalsToConfirm() {
       qc.invalidateQueries({ queryKey: ["blocker_proposals"] });
       qc.invalidateQueries({ queryKey: ["blockers"] });
     },
-    onError: (e: unknown) => toast.error((e as Error).message),
+    onError: (e: unknown) => {
+      toast.error((e as Error).message);
+      setRefusing(null);
+      qc.invalidateQueries({ queryKey: ["blocker_proposals"] });
+    },
   });
 
   return (
@@ -179,6 +185,8 @@ export function ProposalsToConfirm() {
       <ul className="space-y-xs">
         {pending.map((b) => {
           const sev = severity[b.id] ?? b.severity;
+          // On ne confirme pas sa propre proposition : quelqu'un d'autre s'en charge.
+          const own = (b.proposed_by_email ?? "") === email.toLowerCase();
           return (
             <li key={b.id} className="space-y-xs rounded-md border border-outline-variant bg-card p-sm">
               <div className="min-w-0">
@@ -193,6 +201,11 @@ export function ProposalsToConfirm() {
                   {b.created_at ? ` · ${timeAgo(b.created_at)}` : ""}
                 </p>
               </div>
+              {own ? (
+                <p className="font-label-sm text-label-sm text-on-surface-variant italic">
+                  Ta proposition : le manager de l'équipe ou un autre admin la confirmera.
+                </p>
+              ) : (
               <div className="flex flex-wrap items-center gap-xs">
                 <div className="min-w-44 flex-1 sm:max-w-56">
                   <SeveritySelect
@@ -221,6 +234,7 @@ export function ProposalsToConfirm() {
                   <Icon name="check" /> Confirmer
                 </button>
               </div>
+              )}
             </li>
           );
         })}
