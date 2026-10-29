@@ -516,10 +516,10 @@ function ManagerSpace() {
                         </div>
                       </div>
                     </div>
+                    {isAdmin ? (
                     <select
                       aria-label={`Statut de ${b.title}`}
                       value={b.status}
-                      disabled={!isAdmin}
                       onChange={(e) => setBlocker.mutate({ id: b.id, status: e.target.value })}
                       className={`min-h-11 rounded-md border border-outline-variant bg-card px-xs text-xs font-label-sm cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${critical ? "text-error" : "text-on-surface-variant"}`}
                     >
@@ -533,6 +533,11 @@ function ManagerSpace() {
                         RÉSOLU
                       </option>
                     </select>
+                    ) : (
+                      <span className={`shrink-0 font-label-sm text-label-sm ${critical ? "text-error" : "text-on-surface-variant"}`}>
+                        {b.status}
+                      </span>
+                    )}
                   </div>
                 );
               })}
