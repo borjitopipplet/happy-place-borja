@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ErrorSummary, Field, FormActions, Modal, TextArea, TextInput } from "@/components/manage/crud-ui";
 import { rejectionSchema, submissionSchema, validate, type FieldErrors } from "@/lib/manage-schemas";
 import { BrandHeader } from "@/components/brand-header";
+import { Icon } from "@/components/icon";
 import { AttachmentLink } from "@/components/attachment-link";
 import { CharCounter, SubmissionPreview, rejectionErrorMessage } from "@/components/expandable-card";
 import { Linkify } from "@/components/linkify";
@@ -66,14 +67,6 @@ export const Route = createFileRoute("/_authenticated/")({
 const PERF_IMAGE =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuAz-Y4URSqOCzUaVC6vomdu54tTiFPC_bF9A_h0SjxJ1mq2OlNfOyeKTNkPIgtPRloYwE5JrWFm2FHBNUq0GScs0ALDVMiq16FLu95dHNGPjmybEoIb2uyz1OGozRn0XkudSMukcPY4gKfeOJMR_KAnhYbkZifswTCbpCs_aHZyMuoZRz_oc4KsWtWiryTdwVD0EKyvxScj3palbDIM2wMlnH0njPGj912mRwhMmTo3Yu07l6xfVv2Zuw";
 
-function Icon({ name, className = "" }: { name: string; className?: string }) {
-  return (
-    <span aria-hidden="true" className={`material-symbols-outlined ${className}`}>
-      {name}
-    </span>
-  );
-}
-
 function trendText(m: Metric | undefined) {
   return m ? TREND_LABELS[m.trend] : "";
 }
@@ -101,19 +94,12 @@ function ManagerSpace() {
   const { role, email, user } = Route.useRouteContext();
   const isAdmin = role === "admin";
   const canReview = role === "admin" || role === "manager";
-  const canWriteNews = canReview;
   const myEmail = (email ?? "").toLowerCase();
   const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
   const myName =
     (typeof meta.full_name === "string" && meta.full_name) ||
     (typeof meta.name === "string" && meta.name) ||
     myEmail;
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
-  const [media, setMedia] = useState<MediaDraft>(emptyMedia);
-  const [showLinkErrs, setShowLinkErrs] = useState(false);
-  const newsLinkErrs = showLinkErrs ? linkErrors(media.links) : {};
   const [nps, setNps] = useState<string>("");
   const [submissionForm, setSubmissionForm] = useState<SubmissionInput | null>(null);
   const [submissionErrors, setSubmissionErrors] = useState<FieldErrors>({});
@@ -130,19 +116,11 @@ function ManagerSpace() {
     },
   });
   const [attachment, setAttachment] = useState<File | null>(null);
-  const [rejecting, setRejecting] = useState<Submission | null>(null);
   const [reading, setReading] = useState<Submission | null>(null);
   const [readingNews, setReadingNews] = useState<News | null>(null);
   const [archiveOpen, setArchiveOpen] = useState(false);
-  const [rejectForm, setRejectForm] = useState({ rejection_category: "", rejection_note: "" });
-  const [rejectErrors, setRejectErrors] = useState<FieldErrors>({});
 
   const news = useQuery({ queryKey: ["news"], queryFn: fetchNews, retry: false });
-  const submissions = useQuery({
-    queryKey: ["submissions"],
-    queryFn: fetchSubmissions,
-    retry: false,
-  });
   const mine = useQuery({
     queryKey: ["submissions", "mine", email],
     queryFn: () => fetchMySubmissions(email ?? ""),
@@ -167,59 +145,6 @@ function ManagerSpace() {
     },
     onError,
   });
-
-  const saveDraft = useMutation({
-    mutationFn: saveDraftNews,
-    onSuccess: () => {
-      setTitle("");
-      setBody("");
-      setEditingNewsId(null);
-      setMedia(emptyMedia());
-      setShowLinkErrs(false);
-      toast.success("Brouillon enregistré");
-      qc.invalidateQueries({ queryKey: ["news"] });
-    },
-    onError,
-  });
-
-  const publishDraft = useMutation({
-    mutationFn: publishDraftNews,
-    onSuccess: () => {
-      toast.success("Actualité publiée");
-      qc.invalidateQueries({ queryKey: ["news"] });
-    },
-    onError,
-  });
-
-  const removeDraft = useMutation({
-    mutationFn: (n: { id: string; image_path?: string | null }) => deleteDraftNews(n.id, n.image_path),
-    onSuccess: () => {
-      toast.success("Brouillon supprimé");
-      qc.invalidateQueries({ queryKey: ["news"] });
-    },
-    onError,
-  });
-
-  const review = useMutation({
-    mutationFn: reviewSubmission,
-    onSuccess: (_d, vars) => {
-      if (vars.status === "refusée") {
-        setRejecting(null);
-        toast.success("Soumission refusée");
-      } else {
-        setReading((r) => (r?.id === vars.id ? null : r));
-      }
-      qc.invalidateQueries({ queryKey: ["submissions"] });
-    },
-    onError: (e: unknown) => toast.error(rejectionErrorMessage(e)),
-  });
-
-  function startReject(s: Submission) {
-    setReading(null);
-    setRejecting(s);
-    setRejectErrors({});
-    setRejectForm({ rejection_category: "", rejection_note: "" });
-  }
 
   const submit = useMutation({
     mutationFn: (input: SubmissionInput) => submitIdea({
@@ -252,8 +177,6 @@ function ManagerSpace() {
     onError,
   });
 
-  const visibleDrafts = news.data?.filter((n) => n.status === "brouillon") ?? [];
-  const drafts = visibleDrafts.length;
   const published = news.data?.filter((n) => n.status === "publiée") ?? [];
   const npsMetric = metricOf(metrics.data, "nps");
   const roleLabel = role === "admin" ? "ADMIN" : role === "manager" ? "MANAGER" : "COLLABORATEUR";
@@ -305,12 +228,6 @@ function ManagerSpace() {
             >
               <Icon name="logout" /> DÉCONNEXION
             </button>
-            {isAdmin && (<Link
-              to="/manage/news"
-              className="flex items-center gap-xs px-md py-xs border border-outline bg-surface text-primary font-label-md text-label-md hover:bg-surface-container transition-all"
-            >
-              <Icon name="database" /> GÉRER LES DONNÉES
-            </Link>)}
             <Button
               type="button"
               variant="outline"
@@ -324,169 +241,14 @@ function ManagerSpace() {
         </div>
 
         <div className="bento-grid">
-          {/* News Management & Input */}
-          <section className="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant p-md flex flex-col gap-md">
+          {/* Actualités publiées */}
+          <section className="col-span-12 bg-surface-container-lowest border border-outline-variant p-md flex flex-col gap-md">
             <div className="flex items-center justify-between border-b border-outline-variant pb-sm">
               <h2 className="font-headline-sm text-headline-sm text-primary">
                 Actualités du cabinet
               </h2>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">
-                {drafts} brouillon{drafts > 1 ? "s" : ""} en attente
-              </span>
             </div>
-            {canWriteNews && <form
-              className="space-y-md"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!title.trim()) return;
-                setShowLinkErrs(true);
-                if (Object.keys(linkErrors(media.links)).length) {
-                  toast.error("Corrige les liens invalides avant d'enregistrer.");
-                  return;
-                }
-                saveDraft.mutate({
-                  links: toNewsLinks(media.links),
-                  media,
-                  id: editingNewsId ?? undefined,
-                  title: title.trim(),
-                  body,
-                  author: myName,
-                  author_email: myEmail,
-                });
-              }}
-            >
-              <div className="space-y-xs">
-                <label className="font-label-md text-label-md text-on-surface-variant block">
-                  TITRE
-                </label>
-                <input
-                  className="w-full bg-transparent border-b border-outline-variant focus:border-primary focus:outline-none transition-colors font-headline-sm text-headline-sm px-0 py-xs"
-                   placeholder="Saisis un titre…"
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-              </div>
-              <div className="space-y-xs">
-                <label className="font-label-md text-label-md text-on-surface-variant block">
-                  CONTENU
-                </label>
-                <textarea
-                  className="w-full bg-card border border-outline-variant focus:border-primary focus:outline-none p-sm font-body-md"
-                   placeholder="Rédige l'actualité…"
-                  rows={4}
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-sm">
-                <NewsMediaEditor
-                  value={media}
-                  onChange={setMedia}
-                  linkErrs={newsLinkErrs}
-                  disabled={saveDraft.isPending}
-                  title={title}
-                />
-                <div className="flex items-center gap-sm">
-                  {editingNewsId && (
-                    <button
-                      type="button"
-                      className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
-                      onClick={() => {
-                        setEditingNewsId(null);
-                        setTitle("");
-                        setBody("");
-                        setMedia(emptyMedia());
-                        setShowLinkErrs(false);
-                      }}
-                    >
-                      Annuler
-                    </button>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={saveDraft.isPending}
-                    className="px-lg py-xs bg-primary text-on-primary font-label-md text-label-md disabled:opacity-50"
-                  >
-                    {saveDraft.isPending ? "Enregistrement…" : "Enregistrer le brouillon"}
-                  </button>
-                </div>
-              </div>
-            </form>}
-            <div className="mt-md pt-md border-t border-outline-variant">
-              {canWriteNews && visibleDrafts.length > 0 && (
-                <>
-                  <h3 className="font-label-md text-label-md text-on-surface-variant mb-sm">
-                    BROUILLONS
-                  </h3>
-                  <div className="space-y-xs mb-md">
-                    {visibleDrafts.map((n) => {
-                      const own = (n.author_email ?? "").toLowerCase() === myEmail;
-                      const allowed = isAdmin || own;
-                      return (
-                        <div
-                          key={n.id}
-                          className="flex items-center justify-between gap-sm p-sm bg-surface-container"
-                        >
-                          <div className="flex items-center gap-md min-w-0">
-                            <Icon name="draft" className="text-on-surface-variant" />
-                            <div className="min-w-0">
-                              <p className="font-body-md text-primary flex items-center gap-xs">
-                                <span className="truncate">{n.title}</span>
-                                <span className="shrink-0 border border-outline-variant px-xs font-label-sm text-label-sm text-on-surface-variant">
-                                  Brouillon
-                                </span>
-                              </p>
-                              <p className="text-xs text-on-surface-variant uppercase font-label-sm">
-                                Créé {timeAgo(n.created_at)} • Par {n.author}
-                              </p>
-                            </div>
-                          </div>
-                          {allowed && (
-                            <div className="flex items-center gap-sm shrink-0">
-                              <button
-                                type="button"
-                                className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
-                                onClick={() => {
-                                  setEditingNewsId(n.id);
-                                  setTitle(n.title);
-                                  setBody(n.body ?? "");
-                                  setMedia(mediaFromNews(n));
-                                  setShowLinkErrs(false);
-                                }}
-                              >
-                                Modifier
-                              </button>
-                              <button
-                                type="button"
-                                className="font-label-sm text-label-sm text-error"
-                                disabled={removeDraft.isPending}
-                                onClick={() => {
-                                  if (window.confirm(`Supprimer le brouillon « ${n.title} » ?`))
-                                    removeDraft.mutate(n);
-                                }}
-                              >
-                                Supprimer
-                              </button>
-                              <button
-                                type="button"
-                                className="px-sm py-1 bg-primary text-on-primary font-label-sm text-label-sm disabled:opacity-50"
-                                disabled={publishDraft.isPending}
-                                onClick={() => {
-                                  if (window.confirm(`Publier l'actualité « ${n.title} » ? Elle sera visible par tous.`))
-                                    publishDraft.mutate(n.id);
-                                }}
-                              >
-                                Publier
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
+            <div>
               <h3 className="font-label-md text-label-md text-on-surface-variant mb-sm">
                 PUBLIÉES RÉCEMMENT
               </h3>
@@ -524,65 +286,6 @@ function ManagerSpace() {
                   </button>
                 ))}
               </div>
-            </div>
-          </section>
-
-          {/* Pending Submissions */}
-          <section className="col-span-12 lg:col-span-4 min-w-0 bg-surface-container-lowest border border-outline-variant p-md flex flex-col">
-            <div className="flex items-center justify-between border-b border-outline-variant pb-sm mb-md">
-              <h2 className="font-headline-sm text-headline-sm text-primary">
-                Soumissions en attente
-              </h2>
-              <div className="bg-tertiary-fixed text-on-tertiary-fixed px-xs py-1 rounded-full font-label-sm text-label-sm">
-                {submissions.data?.length ?? 0} NOUVELLES
-              </div>
-            </div>
-            <div className="space-y-sm flex-grow min-w-0">
-              {submissions.isError && (
-                <p className="text-body-sm text-error">
-                  Les soumissions sont indisponibles.
-                </p>
-              )}
-              {submissions.data?.length === 0 && (
-                <p className="text-body-sm text-on-surface-variant italic">
-                  Aucune soumission en attente.
-                </p>
-              )}
-              {submissions.data?.map((s) => (
-                <div
-                  key={s.id}
-                  className="p-sm border border-outline-variant bg-card space-y-sm min-w-0 overflow-hidden"
-                >
-                  <div className="flex items-center gap-sm">
-                    <div className="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center">
-                      <Icon name="person" className="text-sm" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-body-sm text-primary font-bold wrap-anywhere">{s.author_name}</p>
-                      <p className="text-[10px] text-on-surface-variant font-label-sm wrap-anywhere">{s.team}</p>
-                    </div>
-                    <span className="text-[10px] text-on-surface-variant font-label-sm whitespace-nowrap">
-                      {timeAgo(s.created_at)}
-                    </span>
-                  </div>
-                  <SubmissionPreview content={s.content} onOpen={() => setReading(s)} />
-                  <AttachmentLink path={s.attachment_path} name={s.attachment_name} />
-                  {canReview && <div className="flex gap-xs pt-xs">
-                    <button
-                      onClick={() => startReject(s)}
-                      className="flex-1 py-1 border border-outline text-primary font-label-sm text-label-sm hover:bg-surface-container transition-colors"
-                    >
-                      REFUSER
-                    </button>
-                    <button
-                      onClick={() => review.mutate({ id: s.id, status: "validée" })}
-                      className="flex-1 py-1 bg-primary text-on-primary font-label-sm text-label-sm hover:opacity-90 transition-colors"
-                    >
-                      VALIDER
-                    </button>
-                  </div>}
-                </div>
-              ))}
             </div>
           </section>
 
@@ -779,57 +482,7 @@ function ManagerSpace() {
       </main>
       <BlockerArchive open={archiveOpen} onClose={() => setArchiveOpen(false)} />
       <NewsReader news={readingNews} onClose={() => setReadingNews(null)} />
-      <SubmissionReader
-        submission={reading}
-        onClose={() => setReading(null)}
-        onReject={reading && canReview && reading.status === "en attente" ? () => startReject(reading) : undefined}
-        onApprove={
-          reading && canReview && reading.status === "en attente"
-            ? () => review.mutate({ id: reading.id, status: "validée" })
-            : undefined
-        }
-        approving={review.isPending}
-      />
-      {rejecting && (
-        <Modal title="Refuser la soumission" onClose={() => setRejecting(null)}>
-          <form
-            noValidate
-            className="space-y-sm"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const res = validate(rejectionSchema, rejectForm);
-              if (!res.ok) return setRejectErrors(res.errors);
-              setRejectErrors({});
-              review.mutate({ id: rejecting.id, status: "refusée", ...res.data });
-            }}
-          >
-            <p className="max-h-48 overflow-y-auto border border-outline-variant bg-surface-container-low p-xs text-body-sm italic text-on-surface-variant whitespace-pre-line wrap-anywhere">“{rejecting.content}”</p>
-            <ErrorSummary errors={rejectErrors} />
-            <Field label="Motif du refus" error={rejectErrors.rejection_category}>
-              <select
-                className="w-full border border-outline-variant bg-card p-xs text-body-sm"
-                value={rejectForm.rejection_category}
-                onChange={(e) => setRejectForm({ ...rejectForm, rejection_category: e.target.value })}
-              >
-                <option value="">— Choisir un motif —</option>
-                {REJECTION_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Raison du refus (obligatoire)" error={rejectErrors.rejection_note}>
-              <TextArea
-                rows={4}
-                value={rejectForm.rejection_note}
-                placeholder="Explique au collaborateur pourquoi sa soumission est refusée…"
-                onChange={(e) => setRejectForm({ ...rejectForm, rejection_note: e.target.value })}
-              />
-              <CharCounter value={rejectForm.rejection_note} max={500} />
-            </Field>
-            <FormActions pending={review.isPending} onCancel={() => setRejecting(null)} />
-          </form>
-        </Modal>
-      )}
+      <SubmissionReader submission={reading} onClose={() => setReading(null)} />
       {submissionForm && (
         <Modal title="Soumettre une proposition" onClose={() => setSubmissionForm(null)}>
           <form onSubmit={sendSubmission} className="space-y-sm" noValidate>
