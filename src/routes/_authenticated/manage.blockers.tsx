@@ -18,6 +18,7 @@ import {
   createBlocker,
   deleteBlocker,
   fetchAllBlockers,
+  fetchTeamNames,
   timeAgo,
   updateBlocker,
   type Blocker,
@@ -48,6 +49,7 @@ const empty: BlockerInput = {
   title: "",
   description: "",
   department: "",
+  team: "",
   severity: "warning",
   status: "EN COURS",
 };
@@ -59,6 +61,7 @@ function ManageBlockers() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [toDelete, setToDelete] = useState<Blocker | null>(null);
 
+  const teamNames = useQuery({ queryKey: ["teams", "names"], queryFn: fetchTeamNames, retry: false });
   const list = useQuery({ queryKey: ["blockers", "all"], queryFn: fetchAllBlockers, retry: false });
   const invalidate = () => qc.invalidateQueries({ queryKey: ["blockers"] });
   const onError = (e: unknown) => toast.error((e as Error).message);
@@ -135,7 +138,7 @@ function ManageBlockers() {
               <p className="font-body-md text-primary font-bold">{b.title}</p>
               <p className="text-body-sm text-on-surface-variant">{b.description}</p>
               <p className="text-xs font-label-sm text-on-surface-variant uppercase mt-xs">
-                 {b.department} • {severityLabels[b.severity] ?? b.severity} • {b.status} • {timeAgo(b.updated_at)}
+                 {b.department}{b.team ? ` • équipe ${b.team}` : " • sans équipe"} • {severityLabels[b.severity] ?? b.severity} • {b.status} • {timeAgo(b.updated_at)}
               </p>
             </div>
             <RowActions
@@ -146,6 +149,7 @@ function ManageBlockers() {
                   title: b.title,
                   description: b.description ?? "",
                   department: b.department,
+                  team: b.team ?? "",
                   severity: b.severity,
                   status: b.status,
                 });
@@ -180,6 +184,20 @@ function ManageBlockers() {
                 maxLength={2000}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
+            </Field>
+            <Field label="Équipe responsable (son manager peut modifier ce point)" error={errors.team}>
+              <select
+                value={form.team ?? ""}
+                onChange={(e) => setForm({ ...form, team: e.target.value })}
+                className="min-h-11 w-full border border-outline-variant bg-card p-xs"
+              >
+                <option value="">Aucune (réservé aux admins)</option>
+                {(teamNames.data ?? []).map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
             </Field>
             <Field label="Pôle concerné" error={errors.department}>
               <TextInput

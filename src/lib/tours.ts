@@ -49,7 +49,7 @@ export function accueilTourSteps(role: AppRole): TourStep[] {
       role === "admin"
         ? "Tu changes le statut de chaque point directement ici. Un point OUVERT passe d'abord par EN COURS avant d'être RÉSOLU. « Proposer » sert à en suggérer un."
         : role === "manager"
-          ? "Ce qui freine les équipes. Tu peux en proposer un. Les propositions de ton équipe arrivent dans « À traiter » pour que tu les confirmes."
+          ? "Ce qui freine les équipes. Tu changes le statut de ceux de tes équipes (c'est toi qui valides qu'ils sont résolus) et tu peux en proposer un."
           : "Ce qui freine les équipes en ce moment. Un blocage que tu vois ? Propose-le : le manager de ton équipe le confirme.",
   });
   if (role === "admin") {
@@ -79,8 +79,8 @@ export function traiterTourSteps(role: AppRole): TourStep[] {
       target: "#tour-traiter-ideas",
       title: "Les idées en attente",
       body: admin
-        ? "Les idées de tout le cabinet, les plus anciennes d'abord. « En retard » signale plus de 5 jours ouvrés. Copie l'email de la personne pour la contacter."
-        : "Les idées de tes équipes, les plus anciennes d'abord. « En retard » signale plus de 5 jours ouvrés. Copie l'email de la personne pour la contacter : tu peux lire son idée, pas la modifier.",
+        ? "Les idées de tout le cabinet, les plus anciennes d'abord. « En retard » signale plus de 7 jours sans réponse. Copie l'email de la personne pour la contacter."
+        : "Les idées de tes équipes, les plus anciennes d'abord. « En retard » signale plus de 7 jours sans réponse. Copie l'email de la personne pour la contacter : tu peux lire son idée, pas la modifier.",
     },
     {
       target: "#tour-decision",
@@ -106,7 +106,7 @@ export function traiterTourSteps(role: AppRole): TourStep[] {
       title: "À relancer",
       body: admin
         ? "Les points bloquants sans mise à jour depuis plus de 7 jours. Change leur statut ici pour les remettre à jour."
-        : "Les points bloquants sans mise à jour depuis plus de 7 jours. Tu les vois, et tu relances un admin, qui seul peut changer leur statut.",
+        : "Les points bloquants sans mise à jour depuis plus de 7 jours. Tu changes le statut de ceux de tes équipes ; pour les autres, tu relances le manager concerné.",
     },
   ];
 }

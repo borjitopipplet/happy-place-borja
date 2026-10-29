@@ -57,6 +57,7 @@ export type Blocker = {
   proposed_team?: string | null;
   decision_note?: string | null;
   decided_by_name?: string | null;
+  team?: string | null;
 };
 
 export const SEVERITY_LABELS: Record<string, string> = { critical: "Haute", warning: "Moyenne", info: "Basse" };
@@ -403,6 +404,7 @@ export type BlockerInput = {
   department: string;
   severity: string;
   status: string;
+  team?: string | null;
 };
 export type MetricInput = {
   key: string;
@@ -539,14 +541,14 @@ export async function fetchAllBlockers(): Promise<Blocker[]> {
 export async function createBlocker(input: BlockerInput) {
   const { error } = await db
     .from("blockers")
-    .insert({ ...input, severity: input.severity as Enums["blocker_severity"], status: input.status as Enums["blocker_status"], updated_at: new Date().toISOString() });
+    .insert({ ...input, team: input.team || null, severity: input.severity as Enums["blocker_severity"], status: input.status as Enums["blocker_status"], updated_at: new Date().toISOString() });
   if (error) throw error;
 }
 
 export async function updateBlocker(id: string, input: BlockerInput) {
   const { error } = await db
     .from("blockers")
-    .update({ ...input, severity: input.severity as Enums["blocker_severity"], status: input.status as Enums["blocker_status"], updated_at: new Date().toISOString() })
+    .update({ ...input, team: input.team || null, severity: input.severity as Enums["blocker_severity"], status: input.status as Enums["blocker_status"], updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) throw error;
 }

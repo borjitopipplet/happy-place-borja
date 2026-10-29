@@ -477,7 +477,7 @@ function ManagerSpace() {
                         </div>
                       </div>
                     </div>
-                    {isAdmin ? (
+                    {isAdmin || (role === "manager" && !!b.team && (myTeams.data ?? []).includes(b.team)) ? (
                     <select
                       aria-label={`Statut de ${b.title}`}
                       value={b.status}

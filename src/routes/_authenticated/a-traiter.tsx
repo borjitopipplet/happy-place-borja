@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { ErrorSummary, Field, FormActions, Modal, TextArea } from "@/components/manage/crud-ui";
 import { rejectionSchema, validate, type FieldErrors } from "@/lib/manage-schemas";
 import { BrandHeader } from "@/components/brand-header";
@@ -10,7 +11,7 @@ import { Tour } from "@/components/tour";
 import { traiterTourSteps, tourKey } from "@/lib/tours";
 import { ProposalsToConfirm } from "@/components/blocker-proposals";
 import { RecipientPicker, forWhomText } from "@/components/recipient-picker";
-import { businessDaysSince, LATE_AFTER_BUSINESS_DAYS } from "@/lib/business-days";
+import { daysSince, LATE_AFTER_DAYS, STALE_BLOCKER_DAYS } from "@/lib/delays";
 import { AttachmentLink } from "@/components/attachment-link";
 import { CharCounter, SubmissionPreview, rejectionErrorMessage } from "@/components/expandable-card";
 import { SubmissionReader } from "@/components/submission-reader";
@@ -79,7 +80,21 @@ function ATraiter() {
   });
   const onError = (e: unknown) => toast.error((e as Error).message);
   const blockers = useQuery({ queryKey: ["blockers"], queryFn: fetchBlockers, retry: false });
-  const STALE_DAYS = 7;
+  const STALE_DAYS = STALE_BLOCKER_DAYS;
+  const myTeams = useQuery({
+    queryKey: ["manager_teams", "mine", email],
+    enabled: role === "manager" && !!email,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("manager_teams")
+        .select("team, allowed_users!inner(email)")
+        .eq("allowed_users.email", (email ?? "").toLowerCase());
+      if (error) throw error;
+      return (data ?? []).map((t) => t.team);
+    },
+  });
+  const canEditBlocker = (team?: string | null) =>
+    isAdmin || (role === "manager" && !!team && (myTeams.data ?? []).includes(team));
   const stale = (blockers.data ?? [])
     .filter((b) => Date.now() - new Date(b.updated_at).getTime() > STALE_DAYS * 86400000)
     .sort((a, b) => a.updated_at.localeCompare(b.updated_at));
@@ -480,10 +495,10 @@ function ATraiter() {
                       {timeAgo(s.created_at)}
                     </span>
                   </div>
-                  {businessDaysSince(s.created_at) > LATE_AFTER_BUSINESS_DAYS && (
+                  {daysSince(s.created_at) > LATE_AFTER_DAYS && (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-error-container px-sm py-0.5 font-label-sm text-label-sm text-on-error-container">
                       <span aria-hidden="true" className="size-2 rounded-full bg-error" />
-                      En retard · {businessDaysSince(s.created_at)} jours ouvrés
+                      En retard · {daysSince(s.created_at)} jours
                     </span>
                   )}
                   {s.submitted_by_email && (
@@ -547,10 +562,10 @@ function ATraiter() {
                   <div className="min-w-0">
                     <p className="font-body-md font-bold text-primary wrap-anywhere">{b.title}</p>
                     <p className="font-label-sm text-label-sm text-on-surface-variant">
-                      {b.department} · {b.status} · mis à jour {timeAgo(b.updated_at)}
+                      {b.team ?? b.department} · {b.status} · mis à jour {timeAgo(b.updated_at)}
                     </p>
                   </div>
-                  {isAdmin ? (
+                  {canEditBlocker(b.team) ? (
                     <select
                       aria-label={`Statut de ${b.title}`}
                       value={b.status}
@@ -564,7 +579,7 @@ function ATraiter() {
                     </select>
                   ) : (
                     <span className="font-label-sm text-label-sm text-on-surface-variant">
-                      À relancer auprès d'un admin
+                      {b.team ? `À relancer auprès du manager de l'équipe ${b.team}` : "À relancer auprès d'un admin"}
                     </span>
                   )}
                 </li>

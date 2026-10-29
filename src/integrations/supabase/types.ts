@@ -119,6 +119,7 @@ export type Database = {
           proposed_by_email: string | null
           proposed_team: string | null
           severity: Database["public"]["Enums"]["blocker_severity"]
+          team: string | null
           status: Database["public"]["Enums"]["blocker_status"]
           title: string
           updated_at: string
@@ -133,6 +134,7 @@ export type Database = {
           proposed_by_email?: string | null
           proposed_team?: string | null
           severity?: Database["public"]["Enums"]["blocker_severity"]
+          team?: string | null
           status?: Database["public"]["Enums"]["blocker_status"]
           title: string
           updated_at?: string
@@ -147,6 +149,7 @@ export type Database = {
           proposed_by_email?: string | null
           proposed_team?: string | null
           severity?: Database["public"]["Enums"]["blocker_severity"]
+          team?: string | null
           status?: Database["public"]["Enums"]["blocker_status"]
           title?: string
           updated_at?: string
