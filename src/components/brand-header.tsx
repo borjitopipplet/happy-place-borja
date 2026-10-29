@@ -3,10 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import sharkLogo from "@/assets/bigger-boat-shark.png";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchOwnRole } from "@/lib/auth";
+import { fetchOwnRole, signOut } from "@/lib/auth";
 
 const navLink =
   "border-b-2 border-transparent px-xs py-1 font-label-md text-label-md text-on-primary/80 hover:text-on-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-primary";
+const ROLE_LABEL = { admin: "Admin", manager: "Manager", collaborateur: "Collaborateur" } as const;
 const navActive = { className: "border-on-primary text-on-primary" };
 
 export function BrandHeader() {
@@ -70,7 +71,21 @@ export function BrandHeader() {
               Changer de rôle
             </Link>
           )}
-          <span className="font-label-sm text-label-sm text-on-primary/80">Happy Place</span>
+          {showNav && (
+            <>
+              <span className="hidden font-label-sm text-label-sm text-on-primary/80 md:inline">
+                {email} · {ROLE_LABEL[role.data ?? "collaborateur"]}
+              </span>
+              <button
+                type="button"
+                onClick={() => signOut()}
+                className="min-h-11 rounded-md border border-on-primary/60 px-sm font-label-md text-label-md text-on-primary hover:bg-on-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-primary"
+              >
+                Déconnexion
+              </button>
+            </>
+          )}
+          {!showNav && <span className="font-label-sm text-label-sm text-on-primary/80">Happy Place</span>}
         </div>
       </div>
     </header>

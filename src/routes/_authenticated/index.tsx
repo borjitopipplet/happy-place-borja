@@ -1,5 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { signOut } from "@/lib/auth";
+import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -8,14 +7,12 @@ import { ErrorSummary, Field, FormActions, Modal, TextArea, TextInput } from "@/
 import { rejectionSchema, submissionSchema, validate, type FieldErrors } from "@/lib/manage-schemas";
 import { BrandHeader } from "@/components/brand-header";
 import { Icon } from "@/components/icon";
-import { AttachmentLink } from "@/components/attachment-link";
-import { CharCounter, SubmissionPreview, rejectionErrorMessage } from "@/components/expandable-card";
-import { Linkify } from "@/components/linkify";
+import { MyIdeas } from "@/components/my-ideas";
+import { CharCounter, rejectionErrorMessage } from "@/components/expandable-card";
 import { SubmissionReader } from "@/components/submission-reader";
 import { NewsReader } from "@/components/news-reader";
 import { DepartureNotices } from "@/components/departure-notices";
-import { NewsImage, NewsLinks, NewsMediaEditor } from "@/components/news-media";
-import { emptyMedia, linkErrors, mediaFromNews, toNewsLinks, type MediaDraft } from "@/lib/news-media";
+import { NewsImage, NewsLinks } from "@/components/news-media";
 import { BlockerArchive, ValidatedSubmissions } from "@/components/dashboard-extras";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,9 +60,6 @@ export const Route = createFileRoute("/_authenticated/")({
   }),
   component: ManagerSpace,
 });
-
-const PERF_IMAGE =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuAz-Y4URSqOCzUaVC6vomdu54tTiFPC_bF9A_h0SjxJ1mq2OlNfOyeKTNkPIgtPRloYwE5JrWFm2FHBNUq0GScs0ALDVMiq16FLu95dHNGPjmybEoIb2uyz1OGozRn0XkudSMukcPY4gKfeOJMR_KAnhYbkZifswTCbpCs_aHZyMuoZRz_oc4KsWtWiryTdwVD0EKyvxScj3palbDIM2wMlnH0njPGj912mRwhMmTo3Yu07l6xfVv2Zuw";
 
 function trendText(m: Metric | undefined) {
   return m ? TREND_LABELS[m.trend] : "";
@@ -115,6 +109,16 @@ function ManagerSpace() {
       return (data ?? []).map((t) => t.team).sort();
     },
   });
+  const profile = useQuery({
+    queryKey: ["profile", myEmail],
+    enabled: !!myEmail,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("allowed_users").select("first_name").eq("email", myEmail).maybeSingle();
+      if (error) throw error;
+      return data?.first_name ?? null;
+    },
+  });
+  const firstName = profile.data ?? "";
   const [attachment, setAttachment] = useState<File | null>(null);
   const [reading, setReading] = useState<Submission | null>(null);
   const [readingNews, setReadingNews] = useState<News | null>(null);
@@ -179,7 +183,6 @@ function ManagerSpace() {
 
   const published = news.data?.filter((n) => n.status === "publiée") ?? [];
   const npsMetric = metricOf(metrics.data, "nps");
-  const roleLabel = role === "admin" ? "ADMIN" : role === "manager" ? "MANAGER" : "COLLABORATEUR";
 
   function sendSubmission(e: React.FormEvent) {
     e.preventDefault();
@@ -201,41 +204,34 @@ function ManagerSpace() {
       <BrandHeader />
       <main className="flex-grow w-full max-w-interface mx-auto p-sm md:p-md space-y-md">
         {email && <DepartureNotices email={email} />}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-sm mb-lg">
-          <div className="space-y-sm">
-            <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
-              Vue d'ensemble
-            </p>
-            <h1 className="font-headline-lg text-headline-lg text-primary">Happy Place</h1>
+        <div className="flex flex-col gap-sm md:flex-row md:items-end md:justify-between">
+          <div className="space-y-xs">
+            <h1 className="font-headline-lg text-headline-lg text-primary">
+              {firstName ? `Bonjour, ${firstName}` : "Bonjour"}
+            </h1>
+            <p className="font-body-md text-on-surface-variant">Voici ce qui bouge au cabinet.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-xs">
             <button
+              id="tour-new-idea"
+              type="button"
               onClick={() => {
                 setSubmissionErrors({});
                 const only = role === "manager" && myTeams.data?.length === 1 ? myTeams.data[0] : "";
                 setSubmissionForm({ author_name: "", team: only, content: "", status: "en attente" });
               }}
-              className="flex items-center gap-xs px-md py-xs bg-primary text-on-primary font-label-md text-label-md hover:opacity-90 transition-all shadow-sm"
+              className="inline-flex min-h-11 items-center gap-xs rounded-md bg-primary px-md py-xs font-label-md text-label-md text-on-primary hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
-              <Icon name="add" /> SOUMETTRE UNE IDÉE
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-xs items-center md:items-end md:justify-end">
-            <span className="font-label-sm text-label-sm text-on-surface-variant">
-              {email} · {roleLabel}
-            </span>
-            <button
-              onClick={() => signOut()}
-              className="flex items-center gap-xs px-md py-xs border border-outline bg-surface text-primary font-label-md text-label-md hover:bg-surface-container"
-            >
-              <Icon name="logout" /> DÉCONNEXION
+              <Icon name="add" /> Soumettre une idée
             </button>
             <Button
               type="button"
               variant="outline"
               disabled={exportReport.isPending}
               onClick={() => exportReport.mutate()}
-              className="h-auto rounded-none border-outline bg-surface px-md py-xs font-label-md text-label-md text-primary shadow-none hover:bg-surface-container"
+              className="h-auto min-h-11 rounded-md border-primary bg-transparent px-md py-xs font-label-md text-label-md text-primary shadow-none hover:bg-surface-container"
             >
-              <Icon name="file_download" /> {exportReport.isPending ? "EXPORT EN COURS…" : "EXPORTER LE RAPPORT"}
+              <Icon name="file_download" /> {exportReport.isPending ? "Export en cours…" : "Exporter le rapport"}
             </Button>
           </div>
         </div>
@@ -289,29 +285,16 @@ function ManagerSpace() {
             </div>
           </section>
 
-          {/* Mes soumissions */}
+          {/* Mes idées */}
           {mine.data && mine.data.length > 0 && (
-            <section className="col-span-12 min-w-0 bg-surface-container-lowest border border-outline-variant p-md">
+            <section
+              id="tour-my-ideas"
+              className="col-span-12 min-w-0 bg-surface-container-lowest border border-outline-variant rounded-md p-md"
+            >
               <h2 className="font-headline-sm text-headline-sm text-primary border-b border-outline-variant pb-sm mb-md">
-                Mes soumissions
+                Mes idées
               </h2>
-              <div className="space-y-xs">
-                {mine.data.map((s) => (
-                  <div key={s.id} className="p-sm border border-outline-variant bg-card min-w-0 overflow-hidden">
-                    <SubmissionPreview content={s.content} onOpen={() => setReading(s)} />
-                    <AttachmentLink path={s.attachment_path} name={s.attachment_name} />
-                    <p className="text-[11px] font-label-sm text-on-surface-variant uppercase mt-xs">
-                      {s.status} • {s.team} • {timeAgo(s.created_at)}
-                    </p>
-                    {s.status === "refusée" && s.rejection_category && (
-                      <div className="mt-xs p-xs bg-error-container text-on-error-container text-body-sm wrap-anywhere">
-                        <p className="font-bold">Motif : {s.rejection_category}</p>
-                        <p className="whitespace-pre-line">Raison : <Linkify text={s.rejection_note ?? ""} /></p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <MyIdeas items={mine.data} />
             </section>
           )}
 
@@ -403,80 +386,63 @@ function ManagerSpace() {
             </div>
           </section>
 
-          {/* Performance Hub */}
-          <section className="col-span-12 md:col-span-5 bg-surface-container-lowest border border-outline-variant p-md flex flex-col">
-            <div className="flex items-center justify-between mb-md">
-              <h2 className="font-headline-sm text-headline-sm text-primary">Indicateurs</h2>
-              {isAdmin && <Icon name="settings" className="text-on-surface-variant cursor-pointer" />}
+          {/* Indicateurs */}
+          <section className="col-span-12 md:col-span-5 bg-surface-container-lowest border border-outline-variant rounded-md p-md flex flex-col gap-sm">
+            <h2 className="font-headline-sm text-headline-sm text-primary">Indicateurs</h2>
+            <div className="grid grid-cols-2 gap-sm">
+              {[
+                { key: "training_kpi", fallback: "Taux de placement" },
+                { key: "active_users", fallback: "Missions actives" },
+              ].map(({ key, fallback }) => {
+                const m = metricOf(metrics.data, key);
+                const delta = deltaText(m);
+                return (
+                  <div key={key} className="rounded-md bg-secondary-fixed p-sm">
+                    <p className="font-label-sm text-label-sm text-on-surface-variant">{metricLabel(m, fallback)}</p>
+                    <p className="font-display text-3xl font-black text-primary [font-stretch:75%]">
+                      {formatMetric(m, "—")}
+                    </p>
+                    <p className="font-label-sm text-label-sm text-on-surface-variant">
+                      {trendText(m)}
+                      {delta && ` · ${delta}`}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
-            <div className="grid grid-cols-2 gap-sm mb-md">
-              <div className="p-sm bg-card border border-outline-variant text-center">
-                <p className="font-label-sm text-label-sm text-on-surface-variant uppercase">
-                  {metricLabel(metricOf(metrics.data, "training_kpi"), "Taux de placement")}
-                </p>
-                <p className="font-display text-[32px] text-primary">
-                  {formatMetric(metricOf(metrics.data, "training_kpi"), "—")}
-                </p>
-                <p className="text-[10px] text-on-surface-variant font-label-sm">
-                  {trendText(metricOf(metrics.data, "training_kpi"))}
-                  {deltaText(metricOf(metrics.data, "training_kpi")) &&
-                    ` · ${deltaText(metricOf(metrics.data, "training_kpi"))}`}
+            {isAdmin && (
+              <div className="space-y-xs border-t border-outline-variant pt-sm">
+                <label htmlFor="nps-input" className="font-label-sm text-label-sm text-on-surface-variant block">
+                  Modifier le NPS candidats
+                </label>
+                <div className="flex gap-xs">
+                  <input
+                    id="nps-input"
+                    className="min-h-11 flex-grow rounded-md bg-card border border-outline-variant p-xs font-label-md focus:outline-none focus:border-primary"
+                    type="number"
+                    value={nps !== "" ? nps : (npsMetric?.value ?? "")}
+                    onChange={(e) => setNps(e.target.value)}
+                  />
+                  <button
+                    onClick={() =>
+                      saveMetric.mutate({
+                        key: "nps",
+                        value: Number(nps !== "" ? nps : (npsMetric?.value ?? 0)),
+                      })
+                    }
+                    disabled={saveMetric.isPending}
+                    className="min-h-11 rounded-md bg-primary text-on-primary px-sm font-label-md text-label-md disabled:opacity-50"
+                  >
+                    Mettre à jour
+                  </button>
+                </div>
+                <p className="font-label-sm text-label-sm text-on-surface-variant">
+                  {npsMetric
+                    ? `Tendance : ${trendText(npsMetric)}${deltaText(npsMetric) ? ` · ${deltaText(npsMetric)}` : ""}`
+                    : "Mis à jour à partir des retours candidats."}
                 </p>
               </div>
-              <div className="p-sm bg-card border border-outline-variant text-center">
-                <p className="font-label-sm text-label-sm text-on-surface-variant uppercase">
-                  {metricLabel(metricOf(metrics.data, "active_users"), "Missions actives")}
-                </p>
-                <p className="font-display text-[32px] text-primary">
-                  {formatMetric(metricOf(metrics.data, "active_users"), "—")}
-                </p>
-                <p className="text-[10px] text-on-surface-variant font-label-sm">
-                  {trendText(metricOf(metrics.data, "active_users"))}
-                  {deltaText(metricOf(metrics.data, "active_users")) &&
-                    ` · ${deltaText(metricOf(metrics.data, "active_users"))}`}
-                </p>
-              </div>
-            </div>
-            {isAdmin && <div className="space-y-xs">
-              <label className="font-label-sm text-label-sm text-on-surface-variant block">
-                MODIFIER LE NPS CANDIDATS
-              </label>
-              <div className="flex gap-xs">
-                <input
-                  className="flex-grow bg-card border border-outline-variant p-xs font-label-md focus:outline-none focus:border-primary"
-                  type="number"
-                  value={nps !== "" ? nps : (npsMetric?.value ?? "")}
-                  onChange={(e) => setNps(e.target.value)}
-                />
-                <button
-                  onClick={() =>
-                    saveMetric.mutate({
-                      key: "nps",
-                      value: Number(nps !== "" ? nps : (npsMetric?.value ?? 0)),
-                    })
-                  }
-                  disabled={saveMetric.isPending}
-                  className="bg-primary text-on-primary px-sm font-label-md text-label-md disabled:opacity-50"
-                >
-                  METTRE À JOUR
-                </button>
-              </div>
-              <p className="text-[10px] text-on-surface-variant italic">
-                {npsMetric
-                  ? `Tendance : ${trendText(npsMetric)}${
-                      deltaText(npsMetric) ? ` · ${deltaText(npsMetric)}` : ""
-                    }`
-                  : "Mis à jour à partir des retours candidats."}
-              </p>
-            </div>}
-            <div className="mt-auto pt-md">
-              <img
-                src={PERF_IMAGE}
-                 alt="Graphiques minimalistes à barres et à lignes dans un tableau de bord anthracite et blanc"
-                loading="lazy"
-                className="w-full h-24 object-cover border border-outline-variant"
-              />
-            </div>
+            )}
           </section>
         </div>
       </main>
