@@ -19,7 +19,12 @@ export default defineConfig({
       // Point d'entrée serveur : src/server.ts (page d'erreur propre en cas de plantage)
       server: { entry: "server" },
     }),
-    nitro(),
+    // Mise en ligne sur Cloudflare Workers (génère aussi wrangler.json dans .output)
+    nitro({
+      compatibilityDate: "2025-06-01",
+      preset: "cloudflare_module",
+      cloudflare: { deployConfig: true, nodeCompat: true },
+    }),
     viteReact(),
     tailwindcss(),
   ],
