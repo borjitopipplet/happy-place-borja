@@ -279,6 +279,24 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          email: string
+          updated_at: string
+          weekly_summary: boolean
+        }
+        Insert: {
+          email: string
+          updated_at?: string
+          weekly_summary?: boolean
+        }
+        Update: {
+          email?: string
+          updated_at?: string
+          weekly_summary?: boolean
+        }
+        Relationships: []
+      }
       news: {
         Row: {
           author: string

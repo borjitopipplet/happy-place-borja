@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import sharkLogo from "@/assets/bigger-boat-shark.png";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchOwnRole, signOut } from "@/lib/auth";
+import { NotificationPrefsModal } from "@/components/notification-prefs";
 
 const navLink =
   "inline-flex min-h-11 items-center border-b-2 border-transparent px-xs py-1 font-label-md text-label-md text-on-primary/80 hover:text-on-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-primary";
@@ -15,6 +16,7 @@ export function BrandHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [signedIn, setSignedIn] = useState(false);
   const [email, setEmail] = useState("");
+  const [prefsOpen, setPrefsOpen] = useState(false);
 
   useEffect(() => {
     const apply = (session: { user?: { email?: string | null } } | null) => {
@@ -78,6 +80,13 @@ export function BrandHeader() {
               </span>
               <button
                 type="button"
+                onClick={() => setPrefsOpen(true)}
+                className="inline-flex min-h-11 items-center font-label-sm text-label-sm text-on-primary underline-offset-2 hover:underline"
+              >
+                Notifications
+              </button>
+              <button
+                type="button"
                 onClick={() => signOut()}
                 className="min-h-11 rounded-md border border-on-primary/60 px-sm font-label-md text-label-md text-on-primary hover:bg-on-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-primary"
               >
@@ -88,6 +97,7 @@ export function BrandHeader() {
           {!showNav && <span className="font-label-sm text-label-sm text-on-primary/80">Happy Place</span>}
         </div>
       </div>
+      {prefsOpen && email && <NotificationPrefsModal email={email.toLowerCase()} onClose={() => setPrefsOpen(false)} />}
     </header>
   );
 }
