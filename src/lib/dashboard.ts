@@ -148,6 +148,29 @@ export async function fetchSubmissions(): Promise<Submission[]> {
   return (data ?? []) as Submission[];
 }
 
+export type Decision = {
+  submission_id: string;
+  new_status: string;
+  changed_by_name: string | null;
+  is_automatic: boolean;
+  changed_at: string;
+};
+
+/** Dernière décision (validée ou refusée) de chaque idée : qui l'a prise et quand. */
+export async function fetchDecisions(ids: string[]): Promise<Record<string, Decision>> {
+  if (!ids.length) return {};
+  const { data, error } = await db
+    .from("submission_status_history")
+    .select("submission_id, new_status, changed_by_name, is_automatic, changed_at")
+    .in("submission_id", ids)
+    .in("new_status", ["validée", "refusée"])
+    .order("changed_at", { ascending: true });
+  if (error) throw error;
+  const out: Record<string, Decision> = {};
+  for (const row of (data ?? []) as Decision[]) out[row.submission_id] = row;
+  return out;
+}
+
 export async function fetchMySubmissions(email: string): Promise<Submission[]> {
   const { data, error } = await db
     .from("submissions")

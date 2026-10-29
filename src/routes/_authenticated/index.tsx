@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import {
   fetchBlockers,
   fetchTeamNames,
+  fetchDecisions,
   ATTACHMENT_TYPES,
   fetchMetrics,
   deltaText,
@@ -176,6 +177,13 @@ function ManagerSpace() {
     queryKey: ["submissions", "mine", email],
     queryFn: () => fetchMySubmissions(email ?? ""),
     enabled: !!email,
+    retry: false,
+  });
+  const myIds = (mine.data ?? []).map((m) => m.id);
+  const decisions = useQuery({
+    queryKey: ["decisions", myIds],
+    queryFn: () => fetchDecisions(myIds),
+    enabled: myIds.length > 0,
     retry: false,
   });
   const blockers = useQuery({ queryKey: ["blockers"], queryFn: fetchBlockers, retry: false });
@@ -386,7 +394,7 @@ function ManagerSpace() {
               <h2 className="font-headline-sm text-headline-sm text-primary border-b border-outline-variant pb-sm mb-md">
                 Mes idées
               </h2>
-              <MyIdeas items={mine.data} />
+              <MyIdeas items={mine.data} decisions={decisions.data} />
             </section>
           )}
 

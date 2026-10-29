@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AttachmentLink } from "@/components/attachment-link";
 import { Linkify } from "@/components/linkify";
 import { Icon } from "@/components/icon";
-import { timeAgo, type Submission } from "@/lib/dashboard";
+import { timeAgo, type Decision, type Submission } from "@/lib/dashboard";
 
 const STATUS: Record<string, { label: string; dot: string }> = {
   "en attente": { label: "En attente", dot: "bg-on-tertiary-fixed" },
@@ -27,7 +27,7 @@ function forWhom(s: Submission) {
 }
 
 /** « Mes idées » : chaque idée s'ouvre pour montrer le texte complet, le statut et, si refusée, le motif. */
-export function MyIdeas({ items }: { items: Submission[] }) {
+export function MyIdeas({ items, decisions = {} }: { items: Submission[]; decisions?: Record<string, Decision> }) {
   const [open, setOpen] = useState<Set<string>>(new Set());
   const toggle = (id: string) =>
     setOpen((prev) => {
@@ -70,6 +70,15 @@ export function MyIdeas({ items }: { items: Submission[] }) {
                   <Linkify text={s.content} />
                 </p>
                 <AttachmentLink path={s.attachment_path} name={s.attachment_name} />
+                {decisions[s.id] && (
+                  <p className="font-label-sm text-label-sm text-on-surface-variant">
+                    {s.status === "validée" ? "Validée" : "Refusée"}
+                    {decisions[s.id].is_automatic || !decisions[s.id].changed_by_name
+                      ? ""
+                      : ` par ${decisions[s.id].changed_by_name}`}{" "}
+                    le {new Date(decisions[s.id].changed_at).toLocaleDateString("fr-FR")}
+                  </p>
+                )}
                 {s.status === "refusée" && s.rejection_category && (
                   <div className="rounded-md bg-error-container p-xs text-body-sm text-on-error-container wrap-anywhere">
                     <p className="font-bold">Motif : {s.rejection_category}</p>
