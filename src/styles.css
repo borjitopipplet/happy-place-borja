@@ -60,13 +60,13 @@
   --color-surface-container-highest: var(--surface-container-highest);
   --color-success: var(--success);
 
-  --font-display: "Bodoni Moda", Georgia, serif;
-  --font-headline-lg: "Bodoni Moda", Georgia, serif;
-  --font-headline-sm: "Bodoni Moda", Georgia, serif;
-  --font-body-md: "Inter Tight", system-ui, sans-serif;
-  --font-body-sm: "Inter Tight", system-ui, sans-serif;
-  --font-label-md: "Space Grotesk", system-ui, sans-serif;
-  --font-label-sm: "Space Grotesk", system-ui, sans-serif;
+  --font-display: "Archivo", system-ui, sans-serif;
+  --font-headline-lg: "Archivo", system-ui, sans-serif;
+  --font-headline-sm: "Archivo", system-ui, sans-serif;
+  --font-body-md: "Archivo", system-ui, sans-serif;
+  --font-body-sm: "Archivo", system-ui, sans-serif;
+  --font-label-md: "Archivo", system-ui, sans-serif;
+  --font-label-sm: "Archivo", system-ui, sans-serif;
 
   --text-headline-lg: 2.75rem;
   --text-headline-lg--line-height: 1.05;
@@ -77,12 +77,12 @@
   --text-body-md--line-height: 1.55;
   --text-body-sm: 0.8125rem;
   --text-body-sm--line-height: 1.5;
-  --text-label-md: 0.75rem;
+  --text-label-md: 0.8125rem;
   --text-label-md--line-height: 1.2;
-  --text-label-md--letter-spacing: 0.08em;
-  --text-label-sm: 0.6875rem;
+  --text-label-md--letter-spacing: 0.04em;
+  --text-label-sm: 0.75rem;
   --text-label-sm--line-height: 1.2;
-  --text-label-sm--letter-spacing: 0.1em;
+  --text-label-sm--letter-spacing: 0.05em;
 
   --spacing-xs: 0.5rem;
   --spacing-sm: 0.75rem;
@@ -95,34 +95,34 @@
 }
 
 :root {
-  --radius: 0rem;
-  --background: oklch(0.968 0.004 90);
-  --foreground: oklch(0.26 0.008 285);
+  --radius: 0.5rem;
+  --background: oklch(0.965 0.007 250);
+  --foreground: oklch(0.25 0.045 262);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.26 0.008 285);
+  --card-foreground: oklch(0.25 0.045 262);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.26 0.008 285);
-  --primary: oklch(0.28 0.009 285);
-  --on-primary: oklch(0.98 0.004 90);
-  --secondary: oklch(0.72 0.062 20);
-  --on-secondary: oklch(0.24 0.01 20);
-  --secondary-fixed: oklch(0.9 0.036 20);
-  --tertiary-fixed: oklch(0.88 0.045 55);
-  --on-tertiary-fixed: oklch(0.32 0.05 45);
-  --muted: oklch(0.94 0.003 90);
-  --accent: oklch(0.92 0.03 20);
+  --popover-foreground: oklch(0.25 0.045 262);
+  --primary: oklch(0.27 0.055 262);
+  --on-primary: oklch(0.985 0.003 250);
+  --secondary: oklch(0.42 0.09 258);
+  --on-secondary: oklch(0.985 0.003 250);
+  --secondary-fixed: oklch(0.92 0.02 255);
+  --tertiary-fixed: oklch(0.9 0.03 250);
+  --on-tertiary-fixed: oklch(0.3 0.07 258);
+  --muted: oklch(0.95 0.007 250);
+  --accent: oklch(0.92 0.02 255);
   --error: oklch(0.53 0.19 25);
   --error-container: oklch(0.9 0.05 25);
   --on-error-container: oklch(0.35 0.14 25);
-  --success: oklch(0.55 0.13 150);
-  --outline: oklch(0.45 0.008 285);
-  --outline-variant: oklch(0.85 0.005 285);
-  --surface: oklch(0.98 0.003 90);
-  --on-surface-variant: oklch(0.52 0.008 285);
+  --success: oklch(0.5 0.13 150);
+  --outline: oklch(0.45 0.04 262);
+  --outline-variant: oklch(0.86 0.012 255);
+  --surface: oklch(0.98 0.004 250);
+  --on-surface-variant: oklch(0.46 0.035 262);
   --surface-container-lowest: oklch(1 0 0);
-  --surface-container: oklch(0.945 0.004 90);
-  --surface-container-high: oklch(0.92 0.005 90);
-  --surface-container-highest: oklch(0.895 0.005 90);
+  --surface-container: oklch(0.945 0.009 252);
+  --surface-container-high: oklch(0.92 0.014 254);
+  --surface-container-highest: oklch(0.895 0.018 255);
   --sidebar: var(--surface);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
@@ -142,6 +142,25 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-body-md);
+  }
+
+  /* Titres : Archivo lourd et condensé (identité V2) */
+  h1,
+  h2,
+  h3,
+  .font-headline-lg,
+  .font-headline-sm {
+    font-weight: 800;
+    font-stretch: 75%;
+  }
+
+  .font-headline-lg {
+    font-weight: 900;
+  }
+
+  .font-label-md,
+  .font-label-sm {
+    font-weight: 600;
   }
 }
 
