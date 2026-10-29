@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AttachmentLink } from "@/components/attachment-link";
 import { Linkify } from "@/components/linkify";
 import { Icon } from "@/components/icon";
+import { forWhomText } from "@/components/recipient-picker";
 import { timeAgo, type Decision, type Submission } from "@/lib/dashboard";
 
 const STATUS: Record<string, { label: string; dot: string }> = {
@@ -19,11 +20,6 @@ export function StatusPill({ status }: { status: string }) {
       {s.label}
     </span>
   );
-}
-
-function forWhom(s: Submission) {
-  const to = s.recipient_teams ?? [];
-  return `Pour : ${to.length ? to.join(", ") : "tout le cabinet"}`;
 }
 
 /** « Mes idées » : chaque idée s'ouvre pour montrer le texte complet, le statut et, si refusée, le motif. */
@@ -59,7 +55,7 @@ export function MyIdeas({ items, decisions = {} }: { items: Submission[]; decisi
                   {s.content}
                 </span>
                 <span className="mt-1 block font-label-sm text-label-sm text-on-surface-variant">
-                  {forWhom(s)} · {timeAgo(s.created_at)}
+                  {forWhomText(s.recipient_teams)} · {timeAgo(s.created_at)}
                 </span>
               </span>
               <StatusPill status={s.status} />

@@ -274,6 +274,7 @@ export type Database = {
           image_path: string | null
           links: Json
           revalidate_at: string | null
+          recipient_teams: string[]
           status: Database["public"]["Enums"]["news_status"]
           title: string
         }
@@ -286,6 +287,7 @@ export type Database = {
           image_path?: string | null
           links?: Json
           revalidate_at?: string | null
+          recipient_teams?: string[]
           status?: Database["public"]["Enums"]["news_status"]
           title: string
         }
@@ -298,6 +300,7 @@ export type Database = {
           image_path?: string | null
           links?: Json
           revalidate_at?: string | null
+          recipient_teams?: string[]
           status?: Database["public"]["Enums"]["news_status"]
           title?: string
         }

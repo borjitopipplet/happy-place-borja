@@ -7,6 +7,7 @@ import { ErrorSummary, Field, FormActions, Modal, TextArea, TextInput } from "@/
 import { rejectionSchema, submissionSchema, validate, type FieldErrors } from "@/lib/manage-schemas";
 import { BrandHeader } from "@/components/brand-header";
 import { Icon } from "@/components/icon";
+import { RecipientPicker, forWhomText } from "@/components/recipient-picker";
 import { MyIdeas } from "@/components/my-ideas";
 import { Tour, type TourStep } from "@/components/tour";
 import { CharCounter, rejectionErrorMessage } from "@/components/expandable-card";
@@ -238,6 +239,12 @@ function ManagerSpace() {
   });
 
   const published = news.data?.filter((n) => n.status === "publiée") ?? [];
+  const [newsTeam, setNewsTeam] = useState("");
+  const [newsLimit, setNewsLimit] = useState(4);
+  const filteredNews = published.filter(
+    (n) => !newsTeam || !n.recipient_teams?.length || n.recipient_teams.includes(newsTeam),
+  );
+  const shownNews = filteredNews.slice(0, newsLimit);
   const npsMetric = metricOf(metrics.data, "nps");
 
   function sendSubmission(e: React.FormEvent) {
@@ -345,9 +352,28 @@ function ManagerSpace() {
               </h2>
             </div>
             <div>
-              <h3 className="font-label-md text-label-md text-on-surface-variant mb-sm">
-                PUBLIÉES RÉCEMMENT
-              </h3>
+              <div className="mb-sm flex flex-wrap items-center justify-between gap-xs">
+                <h3 className="font-label-md text-label-md text-on-surface-variant">Publiées récemment</h3>
+                <label className="flex items-center gap-xs font-label-sm text-label-sm text-on-surface-variant">
+                  Équipe
+                  <select
+                    id="tour-news-filter"
+                    value={newsTeam}
+                    onChange={(e) => {
+                      setNewsTeam(e.target.value);
+                      setNewsLimit(4);
+                    }}
+                    className="min-h-11 rounded-md border border-outline-variant bg-card px-xs font-body-sm text-primary"
+                  >
+                    <option value="">Toutes les équipes</option>
+                    {(teamNames.data ?? []).map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               <div className="space-y-xs">
                 {news.isLoading && (
                   <p className="text-body-sm text-on-surface-variant">Chargement…</p>
@@ -357,7 +383,7 @@ function ManagerSpace() {
                     Les actualités sont indisponibles.
                   </p>
                 )}
-                {published.slice(0, 4).map((n) => (
+                {shownNews.map((n) => (
                   <button
                     type="button"
                     key={n.id}
@@ -372,7 +398,7 @@ function ManagerSpace() {
                       <div className="min-w-0">
                         <p className="font-body-md text-primary group-hover:underline wrap-anywhere">{n.title}</p>
                         <p className="text-xs text-on-surface-variant uppercase font-label-sm">
-                          Publiée {timeAgo(n.created_at)} • Par {n.author}
+                          Publiée {timeAgo(n.created_at)} • Par {n.author} • {forWhomText(n.recipient_teams)}
                         </p>
                       </div>
                     </div>
@@ -381,6 +407,18 @@ function ManagerSpace() {
                     <NewsLinks links={n.links} />
                   </button>
                 ))}
+                {!news.isLoading && filteredNews.length === 0 && (
+                  <p className="text-body-sm text-on-surface-variant italic">Aucune actualité pour cette équipe.</p>
+                )}
+                {filteredNews.length > newsLimit && (
+                  <button
+                    type="button"
+                    onClick={() => setNewsLimit((n) => n + 4)}
+                    className="min-h-11 rounded-md border border-primary px-md font-label-md text-label-md text-primary hover:bg-surface-container"
+                  >
+                    Afficher plus
+                  </button>
+                )}
               </div>
             </div>
           </section>
@@ -584,51 +622,15 @@ function ManagerSpace() {
             {role === "admin" && (
               <p className="text-body-sm text-on-surface-variant">Équipe : Admin</p>
             )}
-            <fieldset className="space-y-xs">
-              <legend className="font-label-md text-label-md text-on-surface-variant">Pour qui ?</legend>
-              <label className="flex min-h-11 items-center gap-xs font-body-md">
-                <input
-                  type="radio"
-                  name="recipient-scope"
-                  checked={recipientScope === "all"}
-                  onChange={() => setRecipientScope("all")}
-                />
-                Tout le cabinet
-              </label>
-              <label className="flex min-h-11 items-center gap-xs font-body-md">
-                <input
-                  type="radio"
-                  name="recipient-scope"
-                  checked={recipientScope === "teams"}
-                  onChange={() => setRecipientScope("teams")}
-                />
-                Une ou plusieurs équipes
-              </label>
-              {recipientScope === "teams" && (
-                <div className="grid grid-cols-1 gap-x-sm sm:grid-cols-2">
-                  {(teamNames.data ?? []).map((t) => (
-                    <label key={t} className="flex min-h-11 items-center gap-xs font-body-md">
-                      <input
-                        type="checkbox"
-                        checked={submissionForm.recipient_teams?.includes(t) ?? false}
-                        onChange={(e) =>
-                          setSubmissionForm({
-                            ...submissionForm,
-                            recipient_teams: e.target.checked
-                              ? [...(submissionForm.recipient_teams ?? []), t]
-                              : (submissionForm.recipient_teams ?? []).filter((x) => x !== t),
-                          })
-                        }
-                      />
-                      {t}
-                    </label>
-                  ))}
-                </div>
-              )}
-              {submissionErrors.recipient_teams && (
-                <p role="alert" className="text-body-sm text-error">{submissionErrors.recipient_teams}</p>
-              )}
-            </fieldset>
+            <RecipientPicker
+              name="idea-recipients"
+              scope={recipientScope}
+              onScopeChange={setRecipientScope}
+              value={submissionForm.recipient_teams ?? []}
+              onChange={(v) => setSubmissionForm({ ...submissionForm, recipient_teams: v })}
+              teams={teamNames.data ?? []}
+              error={submissionErrors.recipient_teams}
+            />
             <Field label="Proposition" error={submissionErrors.content}>
               <TextArea
                 rows={5}

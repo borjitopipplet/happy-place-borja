@@ -18,6 +18,7 @@ export type News = {
   created_at: string;
   image_path?: string | null;
   links?: unknown;
+  recipient_teams?: string[];
 };
 
 export type Submission = {
@@ -104,6 +105,7 @@ export async function saveDraftNews(input: {
   author_email: string;
   links: NewsLink[];
   media: MediaDraft;
+  recipient_teams?: string[];
 }) {
   const payload = {
     title: input.title,
@@ -112,6 +114,7 @@ export async function saveDraftNews(input: {
     author_email: input.author_email.toLowerCase(),
     status: "brouillon" as const,
     links: input.links as unknown as Json,
+    recipient_teams: input.recipient_teams ?? [],
   };
   const { data, error } = input.id
     ? await db.from("news").update(payload).eq("id", input.id).select("id").single()

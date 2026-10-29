@@ -2,6 +2,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Linkify } from "@/components/linkify";
 import { formatExactDate } from "@/components/expandable-card";
 import { NewsImage, NewsLinks } from "@/components/news-media";
+import { forWhomText } from "@/components/recipient-picker";
 import type { News } from "@/lib/dashboard";
 
 /** Fenêtre de lecture d'une actualité publiée (lecture seule, Échap, clic fond). */
@@ -20,7 +21,7 @@ export function NewsReader({ news: n, onClose }: { news: News | null; onClose: (
                   {n.title}
                 </DialogPrimitive.Title>
                 <DialogPrimitive.Description className="font-label-sm text-label-sm text-on-surface-variant">
-                  Publiée le {formatExactDate(n.created_at)} • Par {n.author}
+                  Publiée le {formatExactDate(n.created_at)} • Par {n.author} • {forWhomText(n.recipient_teams)}
                 </DialogPrimitive.Description>
               </div>
               <DialogPrimitive.Close

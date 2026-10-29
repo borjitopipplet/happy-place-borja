@@ -6,6 +6,7 @@ import { ErrorSummary, Field, FormActions, Modal, TextArea } from "@/components/
 import { rejectionSchema, validate, type FieldErrors } from "@/lib/manage-schemas";
 import { BrandHeader } from "@/components/brand-header";
 import { Icon } from "@/components/icon";
+import { RecipientPicker, forWhomText } from "@/components/recipient-picker";
 import { businessDaysSince, LATE_AFTER_BUSINESS_DAYS } from "@/lib/business-days";
 import { AttachmentLink } from "@/components/attachment-link";
 import { CharCounter, SubmissionPreview, rejectionErrorMessage } from "@/components/expandable-card";
@@ -14,6 +15,7 @@ import { NewsMediaEditor } from "@/components/news-media";
 import { emptyMedia, linkErrors, mediaFromNews, toNewsLinks, type MediaDraft } from "@/lib/news-media";
 import {
   fetchNews,
+  fetchTeamNames,
   fetchSubmissions,
   REJECTION_CATEGORIES,
   type Submission,
@@ -57,6 +59,9 @@ function ATraiter() {
   const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
   const [media, setMedia] = useState<MediaDraft>(emptyMedia);
   const [showLinkErrs, setShowLinkErrs] = useState(false);
+  const [newsScope, setNewsScope] = useState<"all" | "teams">("all");
+  const [newsTeams, setNewsTeams] = useState<string[]>([]);
+  const teamNames = useQuery({ queryKey: ["teams", "names"], queryFn: fetchTeamNames, retry: false });
   const newsLinkErrs = showLinkErrs ? linkErrors(media.links) : {};
   const [rejecting, setRejecting] = useState<Submission | null>(null);
   const [reading, setReading] = useState<Submission | null>(null);
@@ -79,6 +84,8 @@ function ATraiter() {
       setEditingNewsId(null);
       setMedia(emptyMedia());
       setShowLinkErrs(false);
+      setNewsScope("all");
+      setNewsTeams([]);
       toast.success("Brouillon enregistré");
       qc.invalidateQueries({ queryKey: ["news"] });
     },
@@ -203,7 +210,12 @@ function ATraiter() {
                   toast.error("Corrige les liens invalides avant d'enregistrer.");
                   return;
                 }
+                if (newsScope === "teams" && newsTeams.length === 0) {
+                  toast.error("Choisis au moins une équipe, ou « Tout le cabinet ».");
+                  return;
+                }
                 saveDraft.mutate({
+                  recipient_teams: newsScope === "all" ? [] : newsTeams,
                   links: toNewsLinks(media.links),
                   media,
                   id: editingNewsId ?? undefined,
@@ -240,6 +252,14 @@ function ATraiter() {
                   onChange={(e) => setBody(e.target.value)}
                 />
               </div>
+              <RecipientPicker
+                name="news-recipients"
+                scope={newsScope}
+                onScopeChange={setNewsScope}
+                value={newsTeams}
+                onChange={setNewsTeams}
+                teams={teamNames.data ?? []}
+              />
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-sm">
                 <NewsMediaEditor
                   value={media}
@@ -259,6 +279,8 @@ function ATraiter() {
                         setBody("");
                         setMedia(emptyMedia());
                         setShowLinkErrs(false);
+                        setNewsScope("all");
+                        setNewsTeams([]);
                       }}
                     >
                       Annuler
@@ -299,7 +321,7 @@ function ATraiter() {
                                 </span>
                               </p>
                               <p className="text-xs text-on-surface-variant uppercase font-label-sm">
-                                Créé {timeAgo(n.created_at)} • Par {n.author}
+                                Créé {timeAgo(n.created_at)} • Par {n.author} • {forWhomText(n.recipient_teams)}
                               </p>
                             </div>
                           </div>
@@ -314,6 +336,8 @@ function ATraiter() {
                                   setBody(n.body ?? "");
                                   setMedia(mediaFromNews(n));
                                   setShowLinkErrs(false);
+                                  setNewsTeams(n.recipient_teams ?? []);
+                                  setNewsScope(n.recipient_teams?.length ? "teams" : "all");
                                 }}
                               >
                                 Modifier
