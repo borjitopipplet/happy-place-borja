@@ -396,7 +396,7 @@ function ManagerSpace() {
                 type="button"
                 aria-haspopup="dialog"
                 onClick={() => setArchiveOpen(true)}
-                className="text-primary font-label-sm text-label-sm underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="min-h-11 px-xs text-primary font-label-sm text-label-sm underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                  VOIR L'ARCHIVE
               </button>
@@ -432,10 +432,10 @@ function ManagerSpace() {
                         <p className="font-body-md text-primary font-bold">{b.title}</p>
                         <p className="text-body-sm text-on-surface-variant">{b.description}</p>
                         <div className="flex items-center gap-sm mt-xs">
-                          <span className="text-[11px] font-label-sm bg-surface-container-highest px-xs py-0.5">
+                          <span className="text-xs font-label-sm bg-surface-container-highest px-xs py-0.5">
                             {b.department}
                           </span>
-                          <span className="text-[11px] font-label-sm text-on-surface-variant">
+                          <span className="text-xs font-label-sm text-on-surface-variant">
                             Mis à jour {timeAgo(b.updated_at)}
                           </span>
                         </div>
@@ -446,7 +446,7 @@ function ManagerSpace() {
                       value={b.status}
                       disabled={!isAdmin}
                       onChange={(e) => setBlocker.mutate({ id: b.id, status: e.target.value })}
-                      className={`bg-transparent border-none text-xs font-label-sm focus:outline-none cursor-pointer ${critical ? "text-error" : "text-on-surface-variant"}`}
+                      className={`min-h-11 rounded-md border border-outline-variant bg-card px-xs text-xs font-label-sm cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${critical ? "text-error" : "text-on-surface-variant"}`}
                     >
                       <option>OUVERT</option>
                       <option>EN COURS</option>

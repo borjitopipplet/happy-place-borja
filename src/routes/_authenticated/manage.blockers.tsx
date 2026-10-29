@@ -134,7 +134,7 @@ function ManageBlockers() {
             <div>
               <p className="font-body-md text-primary font-bold">{b.title}</p>
               <p className="text-body-sm text-on-surface-variant">{b.description}</p>
-              <p className="text-[11px] font-label-sm text-on-surface-variant uppercase mt-xs">
+              <p className="text-xs font-label-sm text-on-surface-variant uppercase mt-xs">
                  {b.department} • {severityLabels[b.severity] ?? b.severity} • {b.status} • {timeAgo(b.updated_at)}
               </p>
             </div>

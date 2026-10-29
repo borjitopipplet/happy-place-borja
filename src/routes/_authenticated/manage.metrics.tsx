@@ -133,7 +133,7 @@ function ManageMetrics() {
               <p className="font-body-md text-primary font-bold">
                 {m.label} — {formatMetricValue(m.value, m.unit)}
               </p>
-              <p className="text-[11px] font-label-sm text-on-surface-variant mt-xs">
+              <p className="text-xs font-label-sm text-on-surface-variant mt-xs">
                 {m.key} • {TREND_LABELS[m.trend]}
                 {m.previous_value != null && (
                   <>

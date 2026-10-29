@@ -150,7 +150,7 @@ export function NewsMediaEditor({
           type="button"
           disabled={disabled}
           onClick={pick}
-          className="text-on-surface-variant flex items-center gap-xs hover:text-primary transition-colors disabled:opacity-50"
+          className="min-h-11 text-on-surface-variant flex items-center gap-xs hover:text-primary transition-colors disabled:opacity-50"
         >
           <I name="image" /> <span className="font-label-sm text-label-sm">{hasImage ? "CHANGER LE MÉDIA" : "AJOUTER UN MÉDIA"}</span>
         </button>
@@ -159,7 +159,7 @@ export function NewsMediaEditor({
           disabled={disabled || full}
           title={full ? "3 liens maximum" : undefined}
           onClick={() => onChange({ ...value, links: [...value.links, { url: "", label: "" }] })}
-          className="text-on-surface-variant flex items-center gap-xs hover:text-primary transition-colors disabled:opacity-50 disabled:hover:text-on-surface-variant"
+          className="min-h-11 text-on-surface-variant flex items-center gap-xs hover:text-primary transition-colors disabled:opacity-50 disabled:hover:text-on-surface-variant"
         >
           <I name="link" /> <span className="font-label-sm text-label-sm">AJOUTER UN LIEN</span>
         </button>

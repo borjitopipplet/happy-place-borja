@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchOwnRole, signOut } from "@/lib/auth";
 
 const navLink =
-  "border-b-2 border-transparent px-xs py-1 font-label-md text-label-md text-on-primary/80 hover:text-on-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-primary";
+  "inline-flex min-h-11 items-center border-b-2 border-transparent px-xs py-1 font-label-md text-label-md text-on-primary/80 hover:text-on-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-primary";
 const ROLE_LABEL = { admin: "Admin", manager: "Manager", collaborateur: "Collaborateur" } as const;
 const navActive = { className: "border-on-primary text-on-primary" };
 
@@ -40,7 +40,7 @@ export function BrandHeader() {
     <header className="bg-primary text-on-primary">
       <div className="mx-auto flex min-h-16 w-full max-w-interface flex-wrap items-center justify-between gap-x-md gap-y-xs px-sm py-xs md:px-md">
         <div className="flex min-w-0 flex-wrap items-center gap-x-lg gap-y-xs">
-          <Link to="/" className="flex min-w-0 items-center gap-sm" aria-label="Bigger Boat — accueil">
+          <Link to="/" className="flex min-h-11 min-w-0 items-center gap-sm" aria-label="Bigger Boat — accueil">
             <span className="flex h-10 w-12 shrink-0 items-center justify-center rounded-md bg-surface-container-lowest">
               <img src={sharkLogo} alt="" width={1024} height={1024} className="h-8 w-10 object-contain" />
             </span>
@@ -66,7 +66,7 @@ export function BrandHeader() {
           {signedIn && pathname !== "/choisir-role" && (
             <Link
               to="/choisir-role"
-              className="font-label-sm text-label-sm text-on-primary underline-offset-2 hover:underline"
+              className="inline-flex min-h-11 items-center font-label-sm text-label-sm text-on-primary underline-offset-2 hover:underline"
             >
               Changer de rôle
             </Link>

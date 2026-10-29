@@ -139,7 +139,7 @@ function ManageNews() {
               <p className="font-body-md text-primary font-bold wrap-anywhere">{n.title}</p>
               <p className="text-body-sm text-on-surface-variant line-clamp-2 wrap-anywhere">{n.body}</p>
               <NewsLinks links={n.links} />
-              <p className="text-[11px] font-label-sm text-on-surface-variant uppercase mt-xs">
+              <p className="text-xs font-label-sm text-on-surface-variant uppercase mt-xs">
                  {newsStatusLabels[n.status] ?? n.status} • {n.author} • {timeAgo(n.created_at)}
               </p>
             </div>

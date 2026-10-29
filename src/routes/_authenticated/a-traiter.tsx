@@ -165,11 +165,12 @@ function ATraiter() {
               }}
             >
               <div className="space-y-xs">
-                <label className="font-label-md text-label-md text-on-surface-variant block">
-                  TITRE
+                <label htmlFor="news-title" className="font-label-md text-label-md text-on-surface-variant block">
+                  Titre
                 </label>
                 <input
-                  className="w-full bg-transparent border-b border-outline-variant focus:border-primary focus:outline-none transition-colors font-headline-sm text-headline-sm px-0 py-xs"
+                  id="news-title"
+                  className="min-h-11 w-full bg-transparent border-b border-outline-variant focus:border-primary focus:outline-none transition-colors font-headline-sm text-headline-sm px-0 py-xs"
                    placeholder="Saisis un titre…"
                   type="text"
                   value={title}
@@ -177,10 +178,11 @@ function ATraiter() {
                 />
               </div>
               <div className="space-y-xs">
-                <label className="font-label-md text-label-md text-on-surface-variant block">
-                  CONTENU
+                <label htmlFor="news-body" className="font-label-md text-label-md text-on-surface-variant block">
+                  Contenu
                 </label>
                 <textarea
+                  id="news-body"
                   className="w-full bg-card border border-outline-variant focus:border-primary focus:outline-none p-sm font-body-md"
                    placeholder="Rédige l'actualité…"
                   rows={4}
@@ -200,7 +202,7 @@ function ATraiter() {
                   {editingNewsId && (
                     <button
                       type="button"
-                      className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
+                      className="min-h-11 px-xs font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
                       onClick={() => {
                         setEditingNewsId(null);
                         setTitle("");
@@ -215,7 +217,7 @@ function ATraiter() {
                   <button
                     type="submit"
                     disabled={saveDraft.isPending}
-                    className="px-lg py-xs bg-primary text-on-primary font-label-md text-label-md disabled:opacity-50"
+                    className="min-h-11 rounded-md px-lg py-xs bg-primary text-on-primary font-label-md text-label-md disabled:opacity-50"
                   >
                     {saveDraft.isPending ? "Enregistrement…" : "Enregistrer le brouillon"}
                   </button>
@@ -255,7 +257,7 @@ function ATraiter() {
                             <div className="flex items-center gap-sm shrink-0">
                               <button
                                 type="button"
-                                className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
+                                className="min-h-11 px-xs font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
                                 onClick={() => {
                                   setEditingNewsId(n.id);
                                   setTitle(n.title);
@@ -268,7 +270,7 @@ function ATraiter() {
                               </button>
                               <button
                                 type="button"
-                                className="font-label-sm text-label-sm text-error"
+                                className="min-h-11 px-xs font-label-sm text-label-sm text-error"
                                 disabled={removeDraft.isPending}
                                 onClick={() => {
                                   if (window.confirm(`Supprimer le brouillon « ${n.title} » ?`))
@@ -279,7 +281,7 @@ function ATraiter() {
                               </button>
                               <button
                                 type="button"
-                                className="px-sm py-1 bg-primary text-on-primary font-label-sm text-label-sm disabled:opacity-50"
+                                className="min-h-11 rounded-md px-sm bg-primary text-on-primary font-label-md text-label-md disabled:opacity-50"
                                 disabled={publishDraft.isPending}
                                 onClick={() => {
                                   if (window.confirm(`Publier l'actualité « ${n.title} » ? Elle sera visible par tous.`))
@@ -331,9 +333,9 @@ function ATraiter() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-body-sm text-primary font-bold wrap-anywhere">{s.author_name}</p>
-                      <p className="text-[10px] text-on-surface-variant font-label-sm wrap-anywhere">{s.team}</p>
+                      <p className="text-xs text-on-surface-variant font-label-sm wrap-anywhere">{s.team}</p>
                     </div>
-                    <span className="text-[10px] text-on-surface-variant font-label-sm whitespace-nowrap">
+                    <span className="text-xs text-on-surface-variant font-label-sm whitespace-nowrap">
                       {timeAgo(s.created_at)}
                     </span>
                   </div>
@@ -342,13 +344,13 @@ function ATraiter() {
                   {canReview && <div className="flex gap-xs pt-xs">
                     <button
                       onClick={() => startReject(s)}
-                      className="flex-1 py-1 border border-outline text-primary font-label-sm text-label-sm hover:bg-surface-container transition-colors"
+                      className="min-h-11 flex-1 rounded-md border border-primary text-primary font-label-md text-label-md hover:bg-surface-container transition-colors"
                     >
                       REFUSER
                     </button>
                     <button
                       onClick={() => review.mutate({ id: s.id, status: "validée" })}
-                      className="flex-1 py-1 bg-primary text-on-primary font-label-sm text-label-sm hover:opacity-90 transition-colors"
+                      className="min-h-11 flex-1 rounded-md bg-primary text-on-primary font-label-md text-label-md hover:opacity-90 transition-colors"
                     >
                       VALIDER
                     </button>

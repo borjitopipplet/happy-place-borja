@@ -17,7 +17,7 @@ export function MetricHistory({ metricKey, unit }: { metricKey: string; unit: st
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="text-[11px] font-label-sm uppercase text-on-surface-variant underline"
+        className="text-xs font-label-sm uppercase text-on-surface-variant underline"
       >
         {open ? "▾" : "▸"} Historique
       </button>

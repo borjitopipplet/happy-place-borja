@@ -38,7 +38,7 @@ export function BlockerArchive({ open, onClose }: { open: boolean; onClose: () =
                 {b.description && (
                   <p className="text-body-sm text-on-surface-variant whitespace-pre-line wrap-anywhere">{b.description}</p>
                 )}
-                <div className="flex flex-wrap items-center gap-sm mt-xs text-[11px] font-label-sm">
+                <div className="flex flex-wrap items-center gap-sm mt-xs text-xs font-label-sm">
                   <span className="bg-surface-container-highest px-xs py-0.5">{b.department}</span>
                   <span className="text-on-surface-variant">Sévérité : {b.severity}</span>
                   <span className="text-on-surface-variant">Mis à jour le {formatExactDate(b.updated_at)}</span>
@@ -95,7 +95,7 @@ export function ValidatedSubmissions({
             aria-label="Filtrer par équipe"
             value={team}
             onChange={(e) => { setTeam(e.target.value); setLimit(PAGE); }}
-            className="max-w-full bg-card border border-outline-variant p-xs focus:outline-none focus:border-primary"
+            className="min-h-11 max-w-full rounded-md bg-card border border-outline-variant p-xs focus:outline-none focus:border-primary"
           >
             <option value="">Toutes les équipes</option>
             {teams.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -110,7 +110,7 @@ export function ValidatedSubmissions({
       <div className="grid gap-xs md:grid-cols-2">
         {shown.map((s) => (
           <div key={s.id} className="p-sm border border-outline-variant bg-card min-w-0 overflow-hidden space-y-xs">
-            <p className="text-[11px] font-label-sm text-on-surface-variant uppercase wrap-anywhere">
+            <p className="text-xs font-label-sm text-on-surface-variant uppercase wrap-anywhere">
               <span className="text-primary font-bold">{s.author_name}</span> • {s.team} •{" "}
               {s.validated_at ? `Validée le ${formatExactDate(s.validated_at)}` : `Soumise le ${formatExactDate(s.created_at)}`}
             </p>
@@ -119,7 +119,7 @@ export function ValidatedSubmissions({
               (canReadAttachment(s, { role, email, managerTeams }) ? (
                 <AttachmentLink path={s.attachment_path} name={s.attachment_name} />
               ) : (
-                <p className="text-[11px] font-label-sm text-on-surface-variant italic">Pièce jointe réservée à l'équipe</p>
+                <p className="text-xs font-label-sm text-on-surface-variant italic">Pièce jointe réservée à l'équipe</p>
               ))}
           </div>
         ))}

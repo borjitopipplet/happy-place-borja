@@ -150,7 +150,7 @@ function ManageSubmissions() {
                 Ouvrir
               </button>
               <AttachmentLink path={s.attachment_path} name={s.attachment_name} />
-              <p className="text-[11px] font-label-sm text-on-surface-variant uppercase mt-xs">
+              <p className="text-xs font-label-sm text-on-surface-variant uppercase mt-xs">
                  {submissionStatusLabels[s.status] ?? s.status} • {timeAgo(s.created_at)}
               </p>
               {s.status === "refusée" && s.rejection_category && (
