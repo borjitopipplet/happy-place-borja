@@ -6,6 +6,8 @@ import { ErrorSummary, Field, FormActions, Modal, TextArea } from "@/components/
 import { rejectionSchema, validate, type FieldErrors } from "@/lib/manage-schemas";
 import { BrandHeader } from "@/components/brand-header";
 import { Icon } from "@/components/icon";
+import { Tour } from "@/components/tour";
+import { traiterTourSteps, tourKey } from "@/lib/tours";
 import { ProposalsToConfirm } from "@/components/blocker-proposals";
 import { RecipientPicker, forWhomText } from "@/components/recipient-picker";
 import { businessDaysSince, LATE_AFTER_BUSINESS_DAYS } from "@/lib/business-days";
@@ -193,18 +195,49 @@ function ATraiter() {
     .filter((s) => !pendingIds.has(s.id))
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
 
+  const [tourOpen, setTourOpen] = useState(false);
+  useEffect(() => {
+    // Première visite de cette page pour ce rôle : la visite s'ouvre seule, une fois.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      if (!localStorage.getItem(tourKey("traiter", role))) timer = setTimeout(() => setTourOpen(true), 1500);
+    } catch {
+      /* stockage indisponible : la visite reste accessible par le bouton */
+    }
+    return () => clearTimeout(timer);
+  }, [role]);
+  function closeTour() {
+    setTourOpen(false);
+    try {
+      localStorage.setItem(tourKey("traiter", role), "1");
+    } catch {
+      /* ignoré */
+    }
+  }
+
   const visibleDrafts = news.data?.filter((n) => n.status === "brouillon") ?? [];
   const drafts = visibleDrafts.length;
 
   return (
     <div className="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
       <BrandHeader />
+      <Tour steps={traiterTourSteps(role)} open={tourOpen} onClose={closeTour} />
       <main className="flex-grow w-full max-w-interface mx-auto p-sm md:p-md space-y-md">
-        <div className="space-y-sm mb-lg">
+        <div className="mb-lg flex flex-wrap items-end justify-between gap-sm">
           <h1 className="font-headline-lg text-headline-lg text-primary">À traiter</h1>
+          <button
+            type="button"
+            onClick={() => setTourOpen(true)}
+            className="inline-flex min-h-11 items-center gap-xs rounded-md px-sm font-label-md text-label-md text-primary underline-offset-2 hover:underline"
+          >
+            <Icon name="help" /> Visite guidée
+          </button>
         </div>
         <div className="bento-grid">
-          <section className="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant p-md flex flex-col gap-md">
+          <section
+            id="tour-traiter-news"
+            className="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant p-md flex flex-col gap-md"
+          >
             <div className="flex items-center justify-between border-b border-outline-variant pb-sm">
               <h2 className="font-headline-sm text-headline-sm text-primary">
                 Actualités à rédiger
@@ -389,7 +422,10 @@ function ATraiter() {
           </section>
 
           {/* Pending Submissions */}
-          <section className="col-span-12 lg:col-span-4 min-w-0 bg-surface-container-lowest border border-outline-variant p-md flex flex-col">
+          <section
+            id="tour-traiter-ideas"
+            className="col-span-12 lg:col-span-4 min-w-0 bg-surface-container-lowest border border-outline-variant p-md flex flex-col"
+          >
             <div className="flex items-center justify-between border-b border-outline-variant pb-sm mb-md">
               <h2 className="font-headline-sm text-headline-sm text-primary">
                 Idées en attente
@@ -409,7 +445,7 @@ function ATraiter() {
                   Aucune idée en attente. Bravo, la file est vide.
                 </p>
               )}
-              {waiting.map((s) => (
+              {waiting.map((s, idx) => (
                 <div
                   key={s.id}
                   className="p-sm border border-outline-variant bg-card space-y-sm min-w-0 overflow-hidden"
@@ -449,7 +485,7 @@ function ATraiter() {
                   )}
                   <SubmissionPreview content={s.content} onOpen={() => setReading(s)} />
                   <AttachmentLink path={s.attachment_path} name={s.attachment_name} />
-                  {canReview && <div className="flex gap-xs pt-xs">
+                  {canReview && <div id={idx === 0 ? "tour-decision" : undefined} className="flex gap-xs pt-xs">
                     <button
                       onClick={() => startReject(s)}
                       className="min-h-11 flex-1 rounded-md border border-primary text-primary font-label-md text-label-md hover:bg-surface-container transition-colors"
@@ -470,7 +506,10 @@ function ATraiter() {
 
           <ProposalsToConfirm />
 
-          <section className="col-span-12 bg-surface-container-lowest border border-outline-variant rounded-md p-md">
+          <section
+            id="tour-traiter-stale"
+            className="col-span-12 bg-surface-container-lowest border border-outline-variant rounded-md p-md"
+          >
             <div className="flex flex-wrap items-center justify-between gap-xs border-b border-outline-variant pb-sm mb-md">
               <h2 className="font-headline-sm text-headline-sm text-primary">
                 Points bloquants sans mise à jour depuis plus de {STALE_DAYS} jours

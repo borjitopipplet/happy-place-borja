@@ -167,7 +167,7 @@ export function ProposalsToConfirm() {
   });
 
   return (
-    <section className="col-span-12 bg-surface-container-lowest border border-outline-variant rounded-md p-md">
+    <section id="tour-traiter-proposals" className="col-span-12 bg-surface-container-lowest border border-outline-variant rounded-md p-md">
       <div className="flex flex-wrap items-center justify-between gap-xs border-b border-outline-variant pb-sm mb-md">
         <h2 className="font-headline-sm text-headline-sm text-primary">Points bloquants à confirmer</h2>
         <span className="font-label-sm text-label-sm text-on-surface-variant">{pending.length} en attente</span>

@@ -10,7 +10,8 @@ import { Icon } from "@/components/icon";
 import { MyBlockerProposals, ProposeBlockerModal } from "@/components/blocker-proposals";
 import { RecipientPicker, forWhomText } from "@/components/recipient-picker";
 import { MyIdeas } from "@/components/my-ideas";
-import { Tour, type TourStep } from "@/components/tour";
+import { Tour } from "@/components/tour";
+import { accueilTourSteps, tourKey } from "@/lib/tours";
 import { CharCounter, rejectionErrorMessage } from "@/components/expandable-card";
 import { SubmissionReader } from "@/components/submission-reader";
 import { NewsReader } from "@/components/news-reader";
@@ -66,47 +67,6 @@ export const Route = createFileRoute("/_authenticated/")({
   }),
   component: ManagerSpace,
 });
-
-const TOUR_KEY = "hp-visite-v2";
-
-function tourStepsFor(isStaff: boolean): TourStep[] {
-  return [
-    {
-      target: "#tour-new-idea",
-      title: "Une idée pour le cabinet ?",
-      body: "Écris-la ici. Ton manager la reçoit, et tu retrouves sa réponse plus bas, dans « Mes idées ».",
-    },
-    ...(isStaff
-      ? [
-          {
-            target: "#tour-nav-traiter",
-            title: "Ton espace « À traiter »",
-            body: "Les idées en attente et les actualités à rédiger ou publier sont ici. Ouvre-le dès que tu as dix minutes.",
-          },
-        ]
-      : []),
-    {
-      target: "#tour-news",
-      title: "Les actualités du cabinet",
-      body: "Ce qui a été décidé et publié. Clique sur une actualité pour la lire en entier.",
-    },
-    {
-      target: "#tour-blockers",
-      title: "Les points bloquants",
-      body: "Ce qui freine les équipes en ce moment. Un blocage que tu vois ? Propose-le : le manager de ton équipe le confirme.",
-    },
-    {
-      target: "#tour-my-ideas",
-      title: "Mes idées",
-      body: "Chaque idée s'ouvre pour montrer son statut et, si elle est refusée, le motif.",
-    },
-    {
-      target: "#tour-account",
-      title: "Ton compte",
-      body: "Tu peux te déconnecter ou changer de rôle ici. Tu peux relancer cette visite à tout moment.",
-    },
-  ];
-}
 
 function trendText(m: Metric | undefined) {
   return m ? TREND_LABELS[m.trend] : "";
@@ -280,7 +240,7 @@ function ManagerSpace() {
     // Petit délai : l'en-tête et les listes doivent être affichés pour que les bulles trouvent leur cible.
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      if (!localStorage.getItem(TOUR_KEY)) timer = setTimeout(() => setTourOpen(true), 1500);
+      if (!localStorage.getItem(tourKey("accueil", role))) timer = setTimeout(() => setTourOpen(true), 1500);
     } catch {
       /* stockage indisponible : la visite reste accessible par le bouton */
     }
@@ -289,12 +249,12 @@ function ManagerSpace() {
   function closeTour() {
     setTourOpen(false);
     try {
-      localStorage.setItem(TOUR_KEY, "1");
+      localStorage.setItem(tourKey("accueil", role), "1");
     } catch {
       /* ignoré */
     }
   }
-  const tourSteps = tourStepsFor(canReview);
+  const tourSteps = accueilTourSteps(role);
 
   return (
     <div className="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
@@ -546,7 +506,10 @@ function ManagerSpace() {
           </section>
 
           {/* Indicateurs */}
-          <section className="col-span-12 md:col-span-5 bg-surface-container-lowest border border-outline-variant rounded-md p-md flex flex-col gap-sm">
+          <section
+            id="tour-indicators"
+            className="col-span-12 md:col-span-5 bg-surface-container-lowest border border-outline-variant rounded-md p-md flex flex-col gap-sm"
+          >
             <h2 className="font-headline-sm text-headline-sm text-primary">Indicateurs</h2>
             <div className="grid grid-cols-2 gap-sm">
               {[

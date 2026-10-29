@@ -55,7 +55,7 @@ export function BrandHeader() {
                 À traiter
               </Link>
               {role.data === "admin" && (
-                <Link to="/manage/news" activeProps={navActive} className={navLink}>
+                <Link id="tour-nav-data" to="/manage/news" activeProps={navActive} className={navLink}>
                   Gérer les données
                 </Link>
               )}
