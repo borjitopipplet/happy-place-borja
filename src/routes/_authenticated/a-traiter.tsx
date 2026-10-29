@@ -19,6 +19,7 @@ import { NewsMediaEditor } from "@/components/news-media";
 import { emptyMedia, linkErrors, mediaFromNews, toNewsLinks, type MediaDraft } from "@/lib/news-media";
 import {
   fetchNews,
+  fetchEditableNewsIds,
   fetchTeamNames,
   fetchBlockers,
   updateBlockerStatus,
@@ -63,6 +64,8 @@ function ATraiter() {
   const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
   const [media, setMedia] = useState<MediaDraft>(emptyMedia);
   const [showLinkErrs, setShowLinkErrs] = useState(false);
+  const [editingPublished, setEditingPublished] = useState(false);
+  const publishedEditRef = useRef(false);
   const [newsScope, setNewsScope] = useState<"all" | "teams">("all");
   const [newsTeams, setNewsTeams] = useState<string[]>([]);
   const teamNames = useQuery({ queryKey: ["teams", "names"], queryFn: fetchTeamNames, retry: false });
@@ -73,6 +76,7 @@ function ATraiter() {
   const [rejectErrors, setRejectErrors] = useState<FieldErrors>({});
 
   const news = useQuery({ queryKey: ["news"], queryFn: fetchNews, retry: false });
+  const editableIds = useQuery({ queryKey: ["news", "editable"], queryFn: fetchEditableNewsIds, retry: false });
   const submissions = useQuery({
     queryKey: ["submissions"],
     queryFn: fetchSubmissions,
@@ -114,7 +118,9 @@ function ATraiter() {
       setShowLinkErrs(false);
       setNewsScope("all");
       setNewsTeams([]);
-      toast.success("Brouillon enregistré");
+      toast.success(publishedEditRef.current ? "Actualité corrigée" : "Brouillon enregistré");
+      publishedEditRef.current = false;
+      setEditingPublished(false);
       qc.invalidateQueries({ queryKey: ["news"] });
     },
     onError,
@@ -226,6 +232,24 @@ function ATraiter() {
     .filter((s) => !pendingIds.has(s.id))
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
 
+  // Admin : une équipe sans manager ne devrait pas exister (la base l'interdit désormais), on le signale quand même.
+  const teamsWithoutManager = useQuery({
+    queryKey: ["teams", "without-manager"],
+    enabled: isAdmin,
+    retry: false,
+    queryFn: async () => {
+      const [t, m] = await Promise.all([
+        supabase.from("teams").select("name, is_reserved"),
+        supabase.from("manager_teams").select("team"),
+      ]);
+      if (t.error) throw t.error;
+      if (m.error) throw m.error;
+      const covered = new Set((m.data ?? []).map((r) => r.team));
+      return (t.data ?? []).filter((x) => !x.is_reserved && !covered.has(x.name)).map((x) => x.name);
+    },
+  });
+  // Personne ne décide sa propre idée (un admin seul le peut si c'est le seul admin : la base tranche).
+  const isOwnIdea = (s: Submission) => !isAdmin && (s.submitted_by_email ?? "").toLowerCase() === myEmail;
   const [tourOpen, setTourOpen] = useState(false);
   useEffect(() => {
     // Première visite de cette page pour ce rôle : la visite s'ouvre seule, une fois.
@@ -264,6 +288,11 @@ function ATraiter() {
             <Icon name="help" /> Visite guidée
           </button>
         </div>
+        {isAdmin && (teamsWithoutManager.data?.length ?? 0) > 0 && (
+          <p role="alert" className="rounded-md bg-error-container p-sm font-body-sm text-body-sm text-on-error-container">
+            Équipes sans manager : {teamsWithoutManager.data!.join(", ")}. Leurs idées et leurs propositions n'ont personne pour les traiter.
+          </p>
+        )}
         <div className="bento-grid">
           <section
             id="tour-traiter-news"
@@ -358,6 +387,8 @@ function ATraiter() {
                         setShowLinkErrs(false);
                         setNewsScope("all");
                         setNewsTeams([]);
+                        setEditingPublished(false);
+                        publishedEditRef.current = false;
                       }}
                     >
                       Annuler
@@ -368,7 +399,7 @@ function ATraiter() {
                     disabled={saveDraft.isPending}
                     className="min-h-11 rounded-md px-lg py-xs bg-primary text-on-primary font-label-md text-label-md disabled:opacity-50"
                   >
-                    {saveDraft.isPending ? "Enregistrement…" : "Enregistrer le brouillon"}
+                    {saveDraft.isPending ? "Enregistrement…" : editingPublished ? "Enregistrer les corrections" : "Enregistrer le brouillon"}
                   </button>
                 </div>
               </div>
@@ -408,6 +439,8 @@ function ATraiter() {
                                 type="button"
                                 className="min-h-11 px-xs font-label-sm text-label-sm text-on-surface-variant hover:text-primary"
                                 onClick={() => {
+                                  setEditingPublished(false);
+                                  publishedEditRef.current = false;
                                   setEditingNewsId(n.id);
                                   setTitle(n.title);
                                   setBody(n.body ?? "");
@@ -449,6 +482,55 @@ function ATraiter() {
                   </div>
                 </>
               )}
+              {(() => {
+                const mine = (news.data ?? []).filter(
+                  (n) => n.status === "publiée" && (editableIds.data ?? []).includes(n.id),
+                );
+                if (!mine.length) return null;
+                return (
+                  <>
+                    <h3 className="font-label-md text-label-md text-on-surface-variant mb-sm mt-md">
+                      Publiées, à corriger si besoin
+                    </h3>
+                    <p className="mb-sm font-body-sm text-body-sm text-on-surface-variant">
+                      {isAdmin ? "Toutes les actualités publiées." : "Les tiennes et celles des managers de tes équipes."}
+                    </p>
+                    <ul className="space-y-xs">
+                      {mine.slice(0, 6).map((n) => (
+                        <li
+                          key={n.id}
+                          className="flex flex-wrap items-center justify-between gap-sm rounded-md bg-surface-container p-sm"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-body-md text-primary wrap-anywhere">{n.title}</p>
+                            <p className="font-label-sm text-label-sm text-on-surface-variant">
+                              Publiée {timeAgo(n.created_at)} • Par {n.author} • {forWhomText(n.recipient_teams)}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            className="min-h-11 rounded-md border border-primary px-sm font-label-md text-label-md text-primary hover:bg-surface-container-high"
+                            onClick={() => {
+                              publishedEditRef.current = true;
+                              setEditingPublished(true);
+                              setEditingNewsId(n.id);
+                              setTitle(n.title);
+                              setBody(n.body ?? "");
+                              setMedia(mediaFromNews(n));
+                              setShowLinkErrs(false);
+                              setNewsTeams(n.recipient_teams ?? []);
+                              setNewsScope(n.recipient_teams?.length ? "teams" : "all");
+                              document.getElementById("news-title")?.scrollIntoView({ block: "center" });
+                            }}
+                          >
+                            Corriger
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                );
+              })()}
             </div>
           </section>
 
@@ -516,6 +598,11 @@ function ATraiter() {
                   )}
                   <SubmissionPreview content={s.content} onOpen={() => setReading(s)} />
                   <AttachmentLink path={s.attachment_path} name={s.attachment_name} />
+                  {isOwnIdea(s) ? (
+                    <p className="rounded-md bg-surface-container p-xs font-label-sm text-label-sm text-on-surface-variant">
+                      C'est ton idée : un autre manager de l'équipe ou un admin la traite.
+                    </p>
+                  ) : (
                   <div id={idx === 0 ? "tour-decision" : undefined} className="flex gap-xs pt-xs">
                     <button
                       onClick={() => startReject(s)}
@@ -530,6 +617,7 @@ function ATraiter() {
                       VALIDER
                     </button>
                   </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -591,9 +679,9 @@ function ATraiter() {
       <SubmissionReader
         submission={reading}
         onClose={() => setReading(null)}
-        onReject={reading && reading.status === "en attente" ? () => startReject(reading) : undefined}
+        onReject={reading && reading.status === "en attente" && !isOwnIdea(reading) ? () => startReject(reading) : undefined}
         onApprove={
-          reading && reading.status === "en attente"
+          reading && reading.status === "en attente" && !isOwnIdea(reading)
             ? () => decide({ id: reading.id, status: "validée" }, "Idée validée")
             : undefined
         }

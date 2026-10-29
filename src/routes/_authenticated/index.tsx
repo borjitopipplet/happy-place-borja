@@ -425,7 +425,7 @@ function ManagerSpace() {
                 onClick={() => setProposeOpen(true)}
                 className="inline-flex min-h-11 items-center gap-xs rounded-md border border-primary px-sm font-label-md text-label-md text-primary hover:bg-surface-container"
               >
-                <Icon name="add" /> Proposer
+                <Icon name="add" /> {role === "manager" ? "Ajouter" : "Proposer"}
               </button>
               <button
                 type="button"
@@ -569,7 +569,7 @@ function ManagerSpace() {
           </section>
         </div>
       </main>
-      {proposeOpen && <ProposeBlockerModal teams={role === "manager" ? (myTeams.data ?? []) : role === "admin" ? (teamNames.data ?? []) : []} onClose={() => setProposeOpen(false)} />}
+      {proposeOpen && <ProposeBlockerModal direct={role === "manager"} teams={role === "manager" ? (myTeams.data ?? []) : role === "admin" ? (teamNames.data ?? []) : []} onClose={() => setProposeOpen(false)} />}
       <BlockerArchive open={archiveOpen} onClose={() => setArchiveOpen(false)} />
       <NewsReader news={readingNews} onClose={() => setReadingNews(null)} />
       <SubmissionReader submission={reading} onClose={() => setReading(null)} />

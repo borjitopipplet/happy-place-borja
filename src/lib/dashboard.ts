@@ -115,18 +115,26 @@ export async function saveDraftNews(input: {
   media: MediaDraft;
   recipient_teams?: string[];
 }) {
-  const payload = {
+  // À la création : auteur et brouillon. En modification : seulement le contenu, pour ne pas
+  // changer l'auteur ni dépublier une actualité (un manager corrige celles de son équipe).
+  const content = {
     title: input.title,
     body: input.body,
-    author: input.author,
-    author_email: input.author_email.toLowerCase(),
-    status: "brouillon" as const,
     links: input.links as unknown as Json,
     recipient_teams: input.recipient_teams ?? [],
   };
   const { data, error } = input.id
-    ? await db.from("news").update(payload).eq("id", input.id).select("id").single()
-    : await db.from("news").insert(payload).select("id").single();
+    ? await db.from("news").update(content).eq("id", input.id).select("id").single()
+    : await db
+        .from("news")
+        .insert({
+          ...content,
+          author: input.author,
+          author_email: input.author_email.toLowerCase(),
+          status: "brouillon" as const,
+        })
+        .select("id")
+        .single();
   if (error) throw error;
   await applyNewsImage(data.id, input.media);
 }
@@ -314,6 +322,26 @@ export async function fetchBlockerProposals(): Promise<Blocker[]> {
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as Blocker[];
+}
+
+/** Un manager crée directement un point bloquant de l'une de ses équipes. */
+export async function createTeamBlocker(input: { title: string; description: string; severity: string; team: string }) {
+  const { error } = await db.from("blockers").insert({
+    title: input.title,
+    description: input.description || null,
+    severity: input.severity as Enums["blocker_severity"],
+    status: "OUVERT",
+    team: input.team,
+    department: input.team,
+  });
+  if (error) throw error;
+}
+
+/** Actualités publiées que l'utilisateur peut corriger (les siennes, celles de son équipe ; toutes pour un admin). */
+export async function fetchEditableNewsIds(): Promise<string[]> {
+  const { data, error } = await db.rpc("editable_news_ids");
+  if (error) throw error;
+  return (data ?? []) as unknown as string[];
 }
 
 export async function proposeBlocker(input: { title: string; description: string; severity: string; team?: string }) {

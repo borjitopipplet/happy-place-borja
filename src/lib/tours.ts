@@ -49,7 +49,7 @@ export function accueilTourSteps(role: AppRole): TourStep[] {
       role === "admin"
         ? "Tu changes le statut de chaque point directement ici. Un point OUVERT passe d'abord par EN COURS avant d'être RÉSOLU. « Proposer » sert à en suggérer un."
         : role === "manager"
-          ? "Ce qui freine les équipes. Tu changes le statut de ceux de tes équipes (c'est toi qui valides qu'ils sont résolus) et tu peux en proposer un."
+          ? "Ce qui freine les équipes. Tu ajoutes directement ceux de tes équipes (« Ajouter ») et tu changes leur statut : c'est toi qui valides qu'ils sont résolus."
           : "Ce qui freine les équipes en ce moment. Un blocage que tu vois ? Propose-le : le manager de ton équipe le confirme.",
   });
   if (role === "admin") {
@@ -85,14 +85,14 @@ export function traiterTourSteps(role: AppRole): TourStep[] {
     {
       target: "#tour-decision",
       title: "Valider ou refuser",
-      body: "« Valider » publie l'idée dans les demandes validées. « Refuser » demande un motif et une raison, que la personne lira. Après chaque décision, tu as 8 secondes pour annuler.",
+      body: "« Valider » publie l'idée dans les demandes validées. « Refuser » demande un motif et une raison, que la personne lira. Après chaque décision, tu as 8 secondes pour annuler. Ta propre idée, c'est un autre manager ou un admin qui la traite.",
     },
     {
       target: "#tour-traiter-news",
       title: "Rédiger une actualité",
       body: admin
-        ? "Titre, contenu, pour qui, média ou lien. Elle reste en brouillon jusqu'à « Publier ». Tu gères tous les brouillons."
-        : "Titre, contenu, pour qui, média ou lien. Elle reste en brouillon jusqu'à « Publier ». Tu gères tes propres brouillons.",
+        ? "Titre, contenu, pour qui, média ou lien. Elle reste en brouillon jusqu'à « Publier ». Tu gères tous les brouillons et tu peux corriger toutes les actualités publiées."
+        : "Titre, contenu, pour qui, média ou lien. Elle reste en brouillon jusqu'à « Publier ». Tu gères tes brouillons, et tu peux corriger les actualités publiées, les tiennes et celles des managers de tes équipes.",
     },
     {
       target: "#tour-traiter-proposals",

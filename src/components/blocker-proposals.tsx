@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ErrorSummary, Field, FormActions, Modal, TextArea, TextInput } from "@/components/manage/crud-ui";
 import { Icon } from "@/components/icon";
 import {
+  createTeamBlocker,
   decideBlockerProposal,
   fetchBlockerProposals,
   proposeBlocker,
@@ -34,8 +35,11 @@ function SeveritySelect({ value, onChange, label }: { value: string; onChange: (
 /** Formulaire « Proposer un point bloquant » : la priorité est une suggestion, le manager confirme. */
 export function ProposeBlockerModal({
   teams,
+  direct = false,
   onClose,
 }: {
+  /** Manager : le point bloquant est créé tel quel pour l'une de ses équipes (pas de proposition). */
+  direct?: boolean;
   /** Équipes possibles : celles du manager, ou toutes pour un admin. Vide pour un collaborateur (son équipe est déduite). */
   teams: string[];
   onClose: () => void;
@@ -44,10 +48,12 @@ export function ProposeBlockerModal({
   const [form, setForm] = useState({ title: "", description: "", severity: "warning", team: teams.length === 1 ? teams[0] : "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const send = useMutation({
-    mutationFn: proposeBlocker,
+    mutationFn: (input: { title: string; description: string; severity: string; team?: string }) =>
+      direct ? createTeamBlocker({ ...input, team: input.team ?? "" }) : proposeBlocker(input),
     onSuccess: () => {
-      toast.success("Proposition envoyée. Le manager de ton équipe la confirmera.");
+      toast.success(direct ? "Point bloquant ajouté." : "Proposition envoyée. Le manager de ton équipe la confirmera.");
       qc.invalidateQueries({ queryKey: ["blocker_proposals"] });
+      qc.invalidateQueries({ queryKey: ["blockers"] });
       onClose();
     },
     onError: (e: unknown) => toast.error((e as Error).message),
@@ -71,7 +77,7 @@ export function ProposeBlockerModal({
   }
 
   return (
-    <Modal title="Proposer un point bloquant" onClose={onClose}>
+    <Modal title={direct ? "Ajouter un point bloquant" : "Proposer un point bloquant"} onClose={onClose}>
       <form onSubmit={submit} className="space-y-sm" noValidate>
         <ErrorSummary errors={errors} />
         <Field label="Titre" error={errors.title}>
@@ -90,8 +96,8 @@ export function ProposeBlockerModal({
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
         </Field>
-        <Field label="Priorité suggérée">
-          <SeveritySelect label="Priorité suggérée" value={form.severity} onChange={(v) => setForm({ ...form, severity: v })} />
+        <Field label={direct ? "Priorité" : "Priorité suggérée"}>
+          <SeveritySelect label={direct ? "Priorité" : "Priorité suggérée"} value={form.severity} onChange={(v) => setForm({ ...form, severity: v })} />
         </Field>
         {teams.length > 1 && (
           <Field label="Équipe" error={errors.team}>
@@ -107,7 +113,7 @@ export function ProposeBlockerModal({
             </select>
           </Field>
         )}
-        <FormActions pending={send.isPending} submitLabel="ENVOYER" onCancel={onClose} />
+        <FormActions pending={send.isPending} submitLabel={direct ? "AJOUTER" : "ENVOYER"} onCancel={onClose} />
       </form>
     </Modal>
   );

@@ -489,6 +489,10 @@ export type Database = {
       }
     }
     Functions: {
+      editable_news_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       choisir_mon_role: {
         Args: {
           _first_name: string
