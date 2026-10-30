@@ -248,8 +248,8 @@ function ATraiter() {
       return (t.data ?? []).filter((x) => !x.is_reserved && !covered.has(x.name)).map((x) => x.name);
     },
   });
-  // Personne ne décide sa propre idée (un admin seul le peut si c'est le seul admin : la base tranche).
-  const isOwnIdea = (s: Submission) => !isAdmin && (s.submitted_by_email ?? "").toLowerCase() === myEmail;
+  // Personne ne décide sa propre idée : il y a toujours au moins deux admins, donc un autre peut la traiter.
+  const isOwnIdea = (s: Submission) => (s.submitted_by_email ?? "").toLowerCase() === myEmail;
   const [tourOpen, setTourOpen] = useState(false);
   useEffect(() => {
     // Première visite de cette page pour ce rôle : la visite s'ouvre seule, une fois.
