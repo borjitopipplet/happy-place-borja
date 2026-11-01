@@ -5,7 +5,6 @@ import sharkLogo from "@/assets/bigger-boat-shark.png";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchOwnRole, signOut } from "@/lib/auth";
 import { NotificationPrefsModal } from "@/components/notification-prefs";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const navLink =
   "inline-flex min-h-11 items-center border-b-2 border-transparent px-xs py-1 font-label-md text-label-md text-on-primary/80 hover:text-on-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-primary";
@@ -67,7 +66,6 @@ export function BrandHeader() {
           )}
         </div>
         <div id="tour-account" className="flex items-center gap-md">
-          <ThemeToggle className="text-on-primary focus-visible:outline-on-primary" />
           {signedIn && pathname !== "/choisir-role" && (
             <Link
               to="/choisir-role"
