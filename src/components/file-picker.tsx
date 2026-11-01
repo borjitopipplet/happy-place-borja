@@ -62,7 +62,6 @@ export function FilePickerButton({
           htmlFor={id}
           className="inline-flex min-h-11 cursor-pointer items-center gap-xs rounded-md border border-dashed border-primary px-md font-label-md text-label-md text-primary transition-colors hover:bg-surface-container peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2"
         >
-          <Icon name="attach_file" />
           {label}
         </label>
       )}
