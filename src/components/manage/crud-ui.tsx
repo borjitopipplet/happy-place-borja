@@ -1,4 +1,14 @@
-import type { ReactNode } from "react";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useId,
+  useRef,
+  type KeyboardEvent,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import type { FieldErrors } from "@/lib/manage-schemas";
 
 export function ManageIcon({ name, className = "" }: { name: string; className?: string }) {
@@ -10,8 +20,13 @@ export function ManageIcon({ name, className = "" }: { name: string; className?:
 }
 
 const inputBase =
-  "w-full bg-card border border-outline-variant focus:border-primary focus:outline-none p-sm font-body-md text-on-surface";
+  "min-h-11 w-full bg-card border border-outline-variant focus:border-primary focus:outline-none p-sm font-body-md text-on-surface";
 
+/**
+ * Étiquette + champ + message d'erreur. L'étiquette est liée au premier champ (input, select, textarea)
+ * trouvé dans les enfants, et l'erreur lui est rattachée (aria-describedby). Quand il n'y a pas de
+ * champ simple (sélecteur de fichier, éditeur de média), le bloc est un groupe nommé par l'étiquette.
+ */
 export function Field({
   label,
   error,
@@ -21,14 +36,40 @@ export function Field({
   error?: string;
   children: ReactNode;
 }) {
+  const uid = useId();
+  const errId = `${uid}-err`;
+  const controls: unknown[] = [TextInput, TextArea, Select, "input", "select", "textarea"];
+  const nodes = Children.toArray(children);
+  const idx = nodes.findIndex((n) => isValidElement(n) && controls.includes(n.type));
+  let controlId: string | undefined;
+  if (idx >= 0) {
+    const el = nodes[idx] as ReactElement<{ id?: string }>;
+    controlId = el.props.id ?? uid;
+    nodes[idx] = cloneElement(el, {
+      id: controlId,
+      "aria-invalid": error ? true : undefined,
+      "aria-describedby": error ? errId : undefined,
+    } as Record<string, unknown>);
+  }
+  const labelClass = "font-label-sm text-label-sm text-on-surface-variant uppercase block";
   return (
-    <div className="space-y-xs">
-      <label className="font-label-sm text-label-sm text-on-surface-variant uppercase block">
-        {label}
-      </label>
-      {children}
+    <div
+      className="space-y-xs"
+      role={controlId ? undefined : "group"}
+      aria-labelledby={controlId ? undefined : `${uid}-label`}
+    >
+      {controlId ? (
+        <label htmlFor={controlId} className={labelClass}>
+          {label}
+        </label>
+      ) : (
+        <span id={`${uid}-label`} className={labelClass}>
+          {label}
+        </span>
+      )}
+      {nodes}
       {error ? (
-        <p role="alert" className="text-body-sm text-error">
+        <p id={errId} role="alert" className="text-body-sm text-error">
           {error}
         </p>
       ) : null}
@@ -48,6 +89,13 @@ export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...props} className={`${inputBase} ${props.className ?? ""}`} />;
 }
 
+const FOCUSABLE =
+  'a[href], button:not(:disabled), input:not(:disabled):not([type="hidden"]), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Fenêtre de dialogue : Échap ferme, le focus entre dans la fenêtre à l'ouverture, Tab y reste,
+ * et le focus revient à l'élément qui l'avait ouverte à la fermeture.
+ */
 export function Modal({
   title,
   onClose,
@@ -57,13 +105,50 @@ export function Modal({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+    const first =
+      dialog?.querySelector<HTMLElement>('input:not([type="hidden"]), select, textarea') ??
+      dialog?.querySelector<HTMLElement>(FOCUSABLE);
+    (first ?? dialog)?.focus();
+    return () => previous?.focus?.();
+  }, []);
+
+  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.key === "Escape") {
+      e.stopPropagation();
+      onClose();
+      return;
+    }
+    if (e.key !== "Tab") return;
+    const items = [...(dialogRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])];
+    if (!items.length) return;
+    const firstEl = items[0];
+    const lastEl = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === firstEl) {
+      e.preventDefault();
+      lastEl.focus();
+    } else if (!e.shiftKey && document.activeElement === lastEl) {
+      e.preventDefault();
+      firstEl.focus();
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-sm md:p-lg">
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-sm md:p-lg"
+      onKeyDown={onKeyDown}
+    >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="w-full max-w-2xl bg-surface-container-lowest border border-outline p-md space-y-md"
+        tabIndex={-1}
+        className="w-full max-w-2xl bg-surface-container-lowest border border-outline p-md space-y-md focus:outline-none"
       >
         <div className="flex items-center justify-between border-b border-outline-variant pb-sm">
           <h2 className="font-headline-sm text-headline-sm text-primary">{title}</h2>
@@ -71,7 +156,7 @@ export function Modal({
             type="button"
             aria-label="Fermer"
             onClick={onClose}
-            className="text-on-surface-variant hover:text-primary"
+            className="inline-flex size-11 items-center justify-center rounded-md text-on-surface-variant hover:text-primary hover:bg-surface-container"
           >
             <ManageIcon name="close" />
           </button>
@@ -96,14 +181,14 @@ export function FormActions({
       <button
         type="button"
         onClick={onCancel}
-        className="px-md py-xs border border-outline text-primary font-label-md text-label-md hover:bg-surface-container"
+        className="min-h-11 rounded-md px-md py-xs border border-outline text-primary font-label-md text-label-md hover:bg-surface-container"
       >
         ANNULER
       </button>
       <button
         type="submit"
         disabled={pending}
-        className="px-lg py-xs bg-primary text-on-primary font-label-md text-label-md disabled:opacity-50"
+        className="min-h-11 rounded-md px-lg py-xs bg-primary text-on-primary font-label-md text-label-md disabled:opacity-50"
       >
         {pending ? "…" : submitLabel}
       </button>
@@ -140,7 +225,7 @@ export function RowActions({
       <button
         type="button"
         onClick={onEdit}
-        className="px-sm py-1 border border-outline text-primary font-label-sm text-label-sm hover:bg-surface-container"
+        className="min-h-11 rounded-md px-sm border border-outline text-primary font-label-sm text-label-sm hover:bg-surface-container"
       >
         MODIFIER
       </button>
@@ -148,7 +233,7 @@ export function RowActions({
         type="button"
         onClick={onDelete}
         disabled={deleting}
-        className="px-sm py-1 border border-error text-error font-label-sm text-label-sm hover:bg-error-container disabled:opacity-50"
+        className="min-h-11 rounded-md px-sm border border-error text-error font-label-sm text-label-sm hover:bg-error-container disabled:opacity-50"
       >
         SUPPRIMER
       </button>
@@ -177,7 +262,7 @@ export function ConfirmDelete({
         <button
           type="button"
           onClick={onCancel}
-          className="px-md py-xs border border-outline text-primary font-label-md text-label-md hover:bg-surface-container"
+          className="min-h-11 rounded-md px-md py-xs border border-outline text-primary font-label-md text-label-md hover:bg-surface-container"
         >
           ANNULER
         </button>
@@ -185,7 +270,7 @@ export function ConfirmDelete({
           type="button"
           onClick={onConfirm}
           disabled={pending}
-          className="px-lg py-xs bg-error text-on-error font-label-md text-label-md disabled:opacity-50"
+          className="min-h-11 rounded-md px-lg py-xs bg-error text-on-error font-label-md text-label-md disabled:opacity-50"
         >
           {pending ? "SUPPRESSION…" : "SUPPRIMER"}
         </button>

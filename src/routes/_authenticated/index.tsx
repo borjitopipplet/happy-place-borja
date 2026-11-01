@@ -595,7 +595,7 @@ function ManagerSpace() {
                   required
                   value={submissionForm.team}
                   onChange={(e) => setSubmissionForm({ ...submissionForm, team: e.target.value })}
-                  className="w-full border border-outline-variant bg-surface px-sm py-xs font-body-md"
+                  className="min-h-11 w-full border border-outline-variant bg-surface px-sm py-xs font-body-md"
                 >
                   <option value="">Choisis une de tes équipes</option>
                   {myTeams.data?.map((t) => (

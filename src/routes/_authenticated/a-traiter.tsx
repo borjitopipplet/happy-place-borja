@@ -759,7 +759,7 @@ function ATraiter() {
             <ErrorSummary errors={rejectErrors} />
             <Field label="Motif du refus" error={rejectErrors.rejection_category}>
               <select
-                className="w-full border border-outline-variant bg-card p-xs text-body-sm"
+                className="min-h-11 w-full border border-outline-variant bg-card p-xs text-body-sm"
                 value={rejectForm.rejection_category}
                 onChange={(e) => setRejectForm({ ...rejectForm, rejection_category: e.target.value })}
               >
