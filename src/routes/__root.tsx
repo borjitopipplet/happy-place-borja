@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
+import { THEME_SCRIPT } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
@@ -67,10 +68,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: false,
 });
 
-// Mode sombre : suit le réglage du système. Le script s'exécute dans le <head>, avant le premier
-// affichage, pour éviter l'éclair de thème clair, puis écoute les changements de réglage.
-const THEME_SCRIPT = `(function(){var m=matchMedia('(prefers-color-scheme: dark)');function a(){document.documentElement.classList.toggle('dark',m.matches)}a();m.addEventListener('change',a)})();`;
-
+// Thème : suit le système par défaut, ou le choix « clair / sombre » du bouton de la cabecera.
+// Le script s'exécute dans le <head>, avant le premier affichage, pour éviter l'éclair de thème clair.
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="fr" suppressHydrationWarning>
