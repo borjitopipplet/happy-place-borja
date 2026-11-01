@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchOwnRole, signOut } from "@/lib/auth";
 import { NotificationPrefsModal } from "@/components/notification-prefs";
 
+// Emails pas encore prêts (envoi par Make en pause) : bouton « Notifications » masqué en ligne.
+const NOTIFICATIONS_EMAIL_ACTIVES = false;
+
 const navLink =
   "inline-flex min-h-11 items-center border-b-2 border-transparent px-xs py-1 font-label-md text-label-md text-on-primary/80 hover:text-on-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-primary";
 const ROLE_LABEL = { admin: "Admin", manager: "Manager", collaborateur: "Collaborateur" } as const;
@@ -42,23 +45,48 @@ export function BrandHeader() {
     <header className="bg-primary text-on-primary">
       <div className="mx-auto flex min-h-16 w-full max-w-interface flex-wrap items-center justify-between gap-x-md gap-y-xs px-sm py-xs md:px-md">
         <div className="flex min-w-0 flex-wrap items-center gap-x-lg gap-y-xs">
-          <Link to="/" className="flex min-h-11 min-w-0 items-center gap-sm" aria-label="Bigger Boat — accueil">
+          <Link
+            to="/"
+            className="flex min-h-11 min-w-0 items-center gap-sm"
+            aria-label="Bigger Boat — accueil"
+          >
             {/* Pastille blanche dans les deux thèmes : le logo est foncé sur fond transparent */}
             <span className="flex h-10 w-12 shrink-0 items-center justify-center rounded-md bg-white">
-              <img src={sharkLogo} alt="" width={1024} height={1024} className="h-8 w-10 object-contain" />
+              <img
+                src={sharkLogo}
+                alt=""
+                width={1024}
+                height={1024}
+                className="h-8 w-10 object-contain"
+              />
             </span>
             <span className="font-label-md text-lg font-bold uppercase">Bigger Boat</span>
           </Link>
           {showNav && isStaff && (
             <nav aria-label="Navigation principale" className="flex flex-wrap items-center gap-md">
-              <Link to="/" activeOptions={{ exact: true }} activeProps={navActive} className={navLink}>
+              <Link
+                to="/"
+                activeOptions={{ exact: true }}
+                activeProps={navActive}
+                className={navLink}
+              >
                 Accueil
               </Link>
-              <Link id="tour-nav-traiter" to="/a-traiter" activeProps={navActive} className={navLink}>
+              <Link
+                id="tour-nav-traiter"
+                to="/a-traiter"
+                activeProps={navActive}
+                className={navLink}
+              >
                 À traiter
               </Link>
               {role.data === "admin" && (
-                <Link id="tour-nav-data" to="/manage/news" activeProps={navActive} className={navLink}>
+                <Link
+                  id="tour-nav-data"
+                  to="/manage/news"
+                  activeProps={navActive}
+                  className={navLink}
+                >
                   Gérer les données
                 </Link>
               )}
@@ -79,13 +107,15 @@ export function BrandHeader() {
               <span className="hidden font-label-sm text-label-sm text-on-primary/80 md:inline">
                 {email} · {ROLE_LABEL[role.data ?? "collaborateur"]}
               </span>
-              <button
-                type="button"
-                onClick={() => setPrefsOpen(true)}
-                className="inline-flex min-h-11 items-center font-label-sm text-label-sm text-on-primary underline-offset-2 hover:underline"
-              >
-                Notifications
-              </button>
+              {NOTIFICATIONS_EMAIL_ACTIVES && (
+                <button
+                  type="button"
+                  onClick={() => setPrefsOpen(true)}
+                  className="inline-flex min-h-11 items-center font-label-sm text-label-sm text-on-primary underline-offset-2 hover:underline"
+                >
+                  Notifications
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => signOut()}
@@ -95,11 +125,17 @@ export function BrandHeader() {
               </button>
             </>
           )}
-          {!showNav && <span className="font-label-sm text-label-sm text-on-primary/80">Happy Place</span>}
+          {!showNav && (
+            <span className="font-label-sm text-label-sm text-on-primary/80">Happy Place</span>
+          )}
         </div>
       </div>
       {prefsOpen && email && (
-        <NotificationPrefsModal email={email.toLowerCase()} role={role.data} onClose={() => setPrefsOpen(false)} />
+        <NotificationPrefsModal
+          email={email.toLowerCase()}
+          role={role.data}
+          onClose={() => setPrefsOpen(false)}
+        />
       )}
     </header>
   );
