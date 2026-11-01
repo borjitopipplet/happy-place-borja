@@ -20,7 +20,7 @@ export function ManageIcon({ name, className = "" }: { name: string; className?:
 }
 
 const inputBase =
-  "min-h-11 w-full bg-card border border-outline-variant focus:border-primary focus:outline-none p-sm font-body-md text-on-surface";
+  "min-h-11 w-full bg-card border border-input focus:border-primary focus:outline-none p-sm font-body-md text-on-surface";
 
 /**
  * Étiquette + champ + message d'erreur. L'étiquette est liée au premier champ (input, select, textarea)
@@ -111,7 +111,9 @@ export function Modal({
     const previous = document.activeElement as HTMLElement | null;
     const dialog = dialogRef.current;
     const first =
-      dialog?.querySelector<HTMLElement>('input:not([type="hidden"]), select, textarea') ??
+      dialog?.querySelector<HTMLElement>(
+        'input:not([type="hidden"]):not(:disabled), select:not(:disabled), textarea:not(:disabled)',
+      ) ??
       dialog?.querySelector<HTMLElement>(FOCUSABLE);
     (first ?? dialog)?.focus();
     return () => previous?.focus?.();
@@ -270,7 +272,7 @@ export function ConfirmDelete({
           type="button"
           onClick={onConfirm}
           disabled={pending}
-          className="min-h-11 rounded-md px-lg py-xs bg-error text-on-error font-label-md text-label-md disabled:opacity-50"
+          className="min-h-11 rounded-md px-lg py-xs bg-error text-on-primary font-label-md text-label-md disabled:opacity-50"
         >
           {pending ? "SUPPRESSION…" : "SUPPRIMER"}
         </button>

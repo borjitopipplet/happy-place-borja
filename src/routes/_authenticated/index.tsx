@@ -484,7 +484,7 @@ function ManagerSpace() {
                       aria-label={`Statut de ${b.title}`}
                       value={b.status}
                       onChange={(e) => setBlocker.mutate({ id: b.id, status: e.target.value })}
-                      className={`min-h-11 rounded-md border border-outline-variant bg-card px-xs text-xs font-label-sm cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${critical ? "text-error" : "text-on-surface-variant"}`}
+                      className={`min-h-11 rounded-md border border-input bg-card px-xs text-xs font-label-sm cursor-pointer focus-visible:ring-2 focus-visible:ring-primary ${critical ? "text-error" : "text-on-surface-variant"}`}
                     >
                       <option>OUVERT</option>
                       <option>EN COURS</option>
@@ -543,7 +543,7 @@ function ManagerSpace() {
                 <div className="flex gap-xs">
                   <input
                     id="nps-input"
-                    className="min-h-11 flex-grow rounded-md bg-card border border-outline-variant p-xs font-label-md focus:outline-none focus:border-primary"
+                    className="min-h-11 flex-grow rounded-md bg-card border border-input p-xs font-label-md focus:outline-none focus:border-primary"
                     type="number"
                     value={nps !== "" ? nps : (npsMetric?.value ?? "")}
                     onChange={(e) => setNps(e.target.value)}
@@ -595,7 +595,7 @@ function ManagerSpace() {
                   required
                   value={submissionForm.team}
                   onChange={(e) => setSubmissionForm({ ...submissionForm, team: e.target.value })}
-                  className="min-h-11 w-full border border-outline-variant bg-surface px-sm py-xs font-body-md"
+                  className="min-h-11 w-full border border-input bg-surface px-sm py-xs font-body-md"
                 >
                   <option value="">Choisis une de tes équipes</option>
                   {myTeams.data?.map((t) => (

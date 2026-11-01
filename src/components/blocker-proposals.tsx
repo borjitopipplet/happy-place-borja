@@ -21,7 +21,7 @@ function SeveritySelect({ value, onChange, label }: { value: string; onChange: (
       aria-label={label}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="min-h-11 w-full rounded-md border border-outline-variant bg-card px-sm font-body-md text-primary"
+      className="min-h-11 w-full rounded-md border border-input bg-card px-sm font-body-md text-primary"
     >
       {SEVERITIES.map((s) => (
         <option key={s} value={s}>
@@ -104,7 +104,7 @@ export function ProposeBlockerModal({
             <select
               value={form.team}
               onChange={(e) => setForm({ ...form, team: e.target.value })}
-              className="min-h-11 w-full rounded-md border border-outline-variant bg-surface px-sm font-body-md"
+              className="min-h-11 w-full rounded-md border border-input bg-surface px-sm font-body-md"
             >
               <option value="">Choisis une équipe</option>
               {teams.map((t) => (

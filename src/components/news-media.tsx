@@ -118,7 +118,7 @@ export function NewsMediaEditor({
               value={l.url}
               disabled={disabled}
               onChange={(e) => onChange({ ...value, links: value.links.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) })}
-              className="min-w-0 flex-[2] bg-card border border-outline-variant p-xs font-body-sm focus:outline-none focus:border-primary"
+              className="min-w-0 flex-[2] bg-card border border-input p-xs font-body-sm focus:outline-none focus:border-primary"
             />
             <div className="flex gap-xs min-w-0 flex-1">
               <input
@@ -128,7 +128,7 @@ export function NewsMediaEditor({
                 value={l.label}
                 disabled={disabled}
                 onChange={(e) => onChange({ ...value, links: value.links.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)) })}
-                className="min-w-0 flex-1 bg-card border border-outline-variant p-xs font-body-sm focus:outline-none focus:border-primary"
+                className="min-w-0 flex-1 bg-card border border-input p-xs font-body-sm focus:outline-none focus:border-primary"
               />
               <button
                 type="button"

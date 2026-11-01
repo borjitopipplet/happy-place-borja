@@ -43,7 +43,8 @@ export function BrandHeader() {
       <div className="mx-auto flex min-h-16 w-full max-w-interface flex-wrap items-center justify-between gap-x-md gap-y-xs px-sm py-xs md:px-md">
         <div className="flex min-w-0 flex-wrap items-center gap-x-lg gap-y-xs">
           <Link to="/" className="flex min-h-11 min-w-0 items-center gap-sm" aria-label="Bigger Boat — accueil">
-            <span className="flex h-10 w-12 shrink-0 items-center justify-center rounded-md bg-surface-container-lowest">
+            {/* Pastille blanche dans les deux thèmes : le logo est foncé sur fond transparent */}
+            <span className="flex h-10 w-12 shrink-0 items-center justify-center rounded-md bg-white">
               <img src={sharkLogo} alt="" width={1024} height={1024} className="h-8 w-10 object-contain" />
             </span>
             <span className="font-label-md text-lg font-bold uppercase">Bigger Boat</span>

@@ -189,7 +189,7 @@ function ManageBlockers() {
               <select
                 value={form.team ?? ""}
                 onChange={(e) => setForm({ ...form, team: e.target.value })}
-                className="min-h-11 w-full border border-outline-variant bg-card p-xs"
+                className="min-h-11 w-full border border-input bg-card p-xs"
               >
                 <option value="">Aucune (réservé aux admins)</option>
                 {(teamNames.data ?? []).map((t) => (

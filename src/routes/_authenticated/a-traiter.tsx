@@ -370,7 +370,7 @@ function ATraiter() {
                 </label>
                 <input
                   id="news-title"
-                  className="min-h-11 w-full bg-transparent border-b border-outline-variant focus:border-primary focus:outline-none transition-colors font-headline-sm text-headline-sm px-0 py-xs"
+                  className="min-h-11 w-full bg-transparent border-b border-input focus:border-primary focus:outline-none transition-colors font-headline-sm text-headline-sm px-0 py-xs"
                    placeholder="Saisis un titre…"
                   type="text"
                   value={title}
@@ -383,7 +383,7 @@ function ATraiter() {
                 </label>
                 <textarea
                   id="news-body"
-                  className="w-full bg-card border border-outline-variant focus:border-primary focus:outline-none p-sm font-body-md"
+                  className="w-full bg-card border border-input focus:border-primary focus:outline-none p-sm font-body-md"
                    placeholder="Rédige l'actualité…"
                   rows={4}
                   value={body}
@@ -708,7 +708,7 @@ function ATraiter() {
                       aria-label={`Statut de ${b.title}`}
                       value={b.status}
                       onChange={(e) => setBlocker.mutate({ id: b.id, status: e.target.value })}
-                      className="min-h-11 rounded-md border border-outline-variant bg-card px-xs font-label-sm text-primary"
+                      className="min-h-11 rounded-md border border-input bg-card px-xs font-label-sm text-primary"
                     >
                       <option>OUVERT</option>
                       <option>EN COURS</option>
@@ -755,11 +755,11 @@ function ATraiter() {
               decide({ id: rejecting.id, status: "refusée", ...res.data }, "Idée refusée");
             }}
           >
-            <p className="max-h-48 overflow-y-auto border border-outline-variant bg-surface-container-low p-xs text-body-sm italic text-on-surface-variant whitespace-pre-line wrap-anywhere">“{rejecting.content}”</p>
+            <p className="max-h-48 overflow-y-auto border border-outline-variant bg-surface-container p-xs text-body-sm italic text-on-surface-variant whitespace-pre-line wrap-anywhere">“{rejecting.content}”</p>
             <ErrorSummary errors={rejectErrors} />
             <Field label="Motif du refus" error={rejectErrors.rejection_category}>
               <select
-                className="min-h-11 w-full border border-outline-variant bg-card p-xs text-body-sm"
+                className="min-h-11 w-full border border-input bg-card p-xs text-body-sm"
                 value={rejectForm.rejection_category}
                 onChange={(e) => setRejectForm({ ...rejectForm, rejection_category: e.target.value })}
               >

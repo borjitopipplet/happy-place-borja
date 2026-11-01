@@ -49,7 +49,7 @@
   --color-border: var(--outline-variant);
   --color-outline: var(--outline);
   --color-outline-variant: var(--outline-variant);
-  --color-input: var(--outline-variant);
+  --color-input: var(--input-border);
   --color-ring: var(--primary);
   --color-surface: var(--surface);
   --color-on-surface: var(--foreground);
@@ -95,6 +95,7 @@
 }
 
 :root {
+  color-scheme: light;
   --radius: 0.5rem;
   --background: oklch(0.965 0.007 250);
   --foreground: oklch(0.25 0.045 262);
@@ -117,6 +118,8 @@
   --success: oklch(0.5 0.13 150);
   --outline: oklch(0.45 0.04 262);
   --outline-variant: oklch(0.86 0.012 255);
+  /* Bordure des champs de saisie : plus marquée que les bordures décoratives des cartes */
+  --input-border: oklch(0.6 0.03 262);
   --surface: oklch(0.98 0.004 250);
   --on-surface-variant: oklch(0.46 0.035 262);
   --surface-container-lowest: oklch(1 0 0);
@@ -131,6 +134,39 @@
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: var(--outline-variant);
   --sidebar-ring: var(--primary);
+}
+
+/* Mode sombre : activé par la classe .dark sur <html> (posée avant le premier affichage par le script de __root.tsx) */
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.18 0.02 262);
+  --foreground: oklch(0.94 0.01 250);
+  --card: oklch(0.22 0.025 262);
+  --card-foreground: oklch(0.94 0.01 250);
+  --popover: oklch(0.22 0.025 262);
+  --popover-foreground: oklch(0.94 0.01 250);
+  --primary: oklch(0.78 0.08 255);
+  --on-primary: oklch(0.18 0.03 262);
+  --secondary: oklch(0.72 0.09 258);
+  --on-secondary: oklch(0.18 0.03 262);
+  --secondary-fixed: oklch(0.3 0.04 258);
+  --tertiary-fixed: oklch(0.32 0.05 255);
+  --on-tertiary-fixed: oklch(0.9 0.03 250);
+  --muted: oklch(0.25 0.02 262);
+  --accent: oklch(0.3 0.04 258);
+  --error: oklch(0.7 0.17 25);
+  --error-container: oklch(0.32 0.09 25);
+  --on-error-container: oklch(0.9 0.05 25);
+  --success: oklch(0.75 0.15 150);
+  --outline: oklch(0.7 0.03 262);
+  --outline-variant: oklch(0.32 0.02 262);
+  --input-border: oklch(0.6 0.03 262);
+  --surface: oklch(0.2 0.02 262);
+  --on-surface-variant: oklch(0.76 0.025 262);
+  --surface-container-lowest: oklch(0.16 0.02 262);
+  --surface-container: oklch(0.25 0.02 262);
+  --surface-container-high: oklch(0.29 0.022 262);
+  --surface-container-highest: oklch(0.33 0.025 262);
 }
 
 @layer base {

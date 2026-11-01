@@ -73,8 +73,7 @@ function ManageLayout() {
             <Link
               key={t.to}
               to={t.to}
-              className="px-md py-xs border border-outline-variant font-label-md text-label-md text-on-surface-variant hover:bg-surface-container"
-              activeProps={{ className: "bg-primary text-on-primary border-primary" }}
+              className="min-h-11 inline-flex items-center rounded-md px-md py-xs border border-outline-variant font-label-md text-label-md text-on-surface-variant hover:bg-surface-container data-[status=active]:border-primary data-[status=active]:bg-primary data-[status=active]:text-on-primary"
             >
               {t.label}
             </Link>

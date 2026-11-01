@@ -95,7 +95,7 @@ export function ValidatedSubmissions({
             aria-label="Filtrer par équipe"
             value={team}
             onChange={(e) => { setTeam(e.target.value); setLimit(PAGE); }}
-            className="min-h-11 max-w-full rounded-md bg-card border border-outline-variant p-xs focus:outline-none focus:border-primary"
+            className="min-h-11 max-w-full rounded-md bg-card border border-input p-xs focus:outline-none focus:border-primary"
           >
             <option value="">Toutes les équipes</option>
             {teams.map((t) => <option key={t} value={t}>{t}</option>)}

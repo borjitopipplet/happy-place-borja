@@ -115,7 +115,7 @@ function ChoisirRolePage() {
   }
 
   const inputCls =
-    "mt-xs h-11 w-full border border-outline-variant bg-background px-sm font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
+    "mt-xs h-11 w-full border border-input bg-background px-sm font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
   const labelCls = "block font-label-sm text-label-sm uppercase text-on-surface-variant";
 
   return (

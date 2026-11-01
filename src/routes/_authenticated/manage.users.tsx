@@ -261,7 +261,7 @@ function UsersPage() {
           placeholder="Prénom (facultatif)"
           aria-label="Prénom"
           maxLength={100}
-          className="min-h-11 border border-outline-variant bg-surface px-sm py-xs font-body-md"
+          className="min-h-11 border border-input bg-surface px-sm py-xs font-body-md"
         />
         <input
           value={lastName}
@@ -269,7 +269,7 @@ function UsersPage() {
           placeholder="Nom (facultatif)"
           aria-label="Nom"
           maxLength={100}
-          className="min-h-11 border border-outline-variant bg-surface px-sm py-xs font-body-md"
+          className="min-h-11 border border-input bg-surface px-sm py-xs font-body-md"
         />
         <div className="flex-1">
           <input
@@ -277,7 +277,7 @@ function UsersPage() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="prenom.nom@gmail.com"
             aria-label="Email Google"
-            className="min-h-11 w-full border border-outline-variant bg-surface px-sm py-xs font-body-md"
+            className="min-h-11 w-full border border-input bg-surface px-sm py-xs font-body-md"
           />
           {err && <p className="text-error text-sm mt-1">{err}</p>}
         </div>
@@ -285,7 +285,7 @@ function UsersPage() {
           value={role}
           onChange={(e) => setRole(e.target.value as Row["role"])}
           aria-label="Rôle"
-          className="min-h-11 border border-outline-variant bg-surface px-sm py-xs font-body-md"
+          className="min-h-11 border border-input bg-surface px-sm py-xs font-body-md"
         >
           <option value="collaborateur">Collaborateur</option>
           <option value="manager">Manager</option>
@@ -296,7 +296,7 @@ function UsersPage() {
             value={newTeam}
             onChange={(e) => setNewTeam(e.target.value)}
             aria-label="Équipe du collaborateur"
-            className="min-h-11 border border-outline-variant bg-surface px-sm py-xs font-body-md"
+            className="min-h-11 border border-input bg-surface px-sm py-xs font-body-md"
           >
             <option value="">Choisir une équipe</option>
             {selectableTeams.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -356,7 +356,7 @@ function UsersPage() {
                 min={minDeparture}
                 value={departureInputs[u.id] ?? u.departure_date ?? ""}
                 onChange={(e) => setDepartureInputs((c) => ({ ...c, [u.id]: e.target.value }))}
-                className="min-h-11 border border-outline-variant bg-surface px-sm py-1 font-body-md"
+                className="min-h-11 border border-input bg-surface px-sm py-1 font-body-md"
               />
               <button
                 type="button"
@@ -387,7 +387,7 @@ function UsersPage() {
             value={memberTeams[u.id] ?? u.team ?? ""}
             onChange={(e) => setMemberTeams((c) => ({ ...c, [u.id]: e.target.value }))}
             aria-label={`Équipe de ${u.email}`}
-            className="min-h-11 border border-outline-variant bg-surface px-sm py-1 font-body-md"
+            className="min-h-11 border border-input bg-surface px-sm py-1 font-body-md"
           >
             <option value="">Choisir une équipe</option>
             {(u.team && !selectableTeams.includes(u.team) ? [u.team, ...selectableTeams] : selectableTeams).map((t) => <option key={t} value={t}>{t}</option>)}
@@ -437,7 +437,7 @@ function UsersPage() {
             value={teamInputs[u.id] ?? ""}
             onChange={(e) => setTeamInputs((current) => ({ ...current, [u.id]: e.target.value }))}
             aria-label={`Ajouter une équipe à ${u.email}`}
-            className="min-h-11 border border-outline-variant bg-surface px-sm py-1 font-body-md"
+            className="min-h-11 border border-input bg-surface px-sm py-1 font-body-md"
           >
             <option value="">Choisir une équipe</option>
             {selectableTeams.filter((t) => !u.teams.includes(t)).map((t) => <option key={t} value={t}>{t}</option>)}
@@ -465,7 +465,7 @@ function UsersPage() {
             value={roleDialog?.team ?? ""}
             onChange={(e) => roleDialog && setRoleDialog({ ...roleDialog, team: e.target.value })}
             aria-label="Équipe du collaborateur"
-            className="min-h-11 w-full border border-outline-variant bg-surface px-sm py-xs font-body-md"
+            className="min-h-11 w-full border border-input bg-surface px-sm py-xs font-body-md"
           >
             <option value="">Choisir une équipe</option>
             {selectableTeams.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -548,7 +548,7 @@ function TeamsSection({ users, teams, onChanged }: { users: Row[]; teams: { name
             placeholder="Nouvelle équipe"
             aria-label="Nouvelle équipe"
             maxLength={60}
-            className="min-h-11 border border-outline-variant bg-surface px-sm py-xs font-body-md"
+            className="min-h-11 border border-input bg-surface px-sm py-xs font-body-md"
           />
           {err && <p className="text-error text-sm mt-1">{err}</p>}
         </div>
@@ -564,7 +564,7 @@ function TeamsSection({ users, teams, onChanged }: { users: Row[]; teams: { name
                   onChange={(e) => setEditing({ ...editing, to: e.target.value })}
                   aria-label={`Nouveau nom pour ${t.name}`}
                   maxLength={60}
-                  className="min-h-11 border border-outline-variant bg-surface px-sm py-1 font-body-md"
+                  className="min-h-11 border border-input bg-surface px-sm py-1 font-body-md"
                 />
                 <button
                   type="button"

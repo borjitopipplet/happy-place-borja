@@ -67,10 +67,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: false,
 });
 
+// Mode sombre : suit le réglage du système. Le script s'exécute dans le <head>, avant le premier
+// affichage, pour éviter l'éclair de thème clair, puis écoute les changements de réglage.
+const THEME_SCRIPT = `(function(){var m=matchMedia('(prefers-color-scheme: dark)');function a(){document.documentElement.classList.toggle('dark',m.matches)}a();m.addEventListener('change',a)})();`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <HeadContent />
       </head>
       <body>

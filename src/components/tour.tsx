@@ -87,7 +87,7 @@ export function Tour({ steps, open, onClose }: { steps: TourStep[]; open: boolea
     <div className="fixed inset-0 z-[100]" role="presentation">
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed rounded-md shadow-[0_0_0_9999px_rgba(18,32,58,0.55)] outline-2 outline-on-primary"
+        className="pointer-events-none fixed rounded-md shadow-[0_0_0_9999px_rgb(0_0_0/0.6)] outline-2 outline-on-primary"
         style={{
           top: rect.top - PAD,
           left: rect.left - PAD,
@@ -99,7 +99,7 @@ export function Tour({ steps, open, onClose }: { steps: TourStep[]; open: boolea
         ref={bubbleRef}
         role="dialog"
         aria-label={`Visite guidée, étape ${index + 1} sur ${visible.length}`}
-        className="fixed rounded-md bg-card p-md text-card-foreground shadow-lg"
+        className="fixed rounded-md border border-outline-variant bg-card p-md text-card-foreground shadow-lg"
         style={{ top, left, width }}
       >
         <span
