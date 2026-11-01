@@ -98,7 +98,9 @@ export function BrandHeader() {
           {!showNav && <span className="font-label-sm text-label-sm text-on-primary/80">Happy Place</span>}
         </div>
       </div>
-      {prefsOpen && email && <NotificationPrefsModal email={email.toLowerCase()} onClose={() => setPrefsOpen(false)} />}
+      {prefsOpen && email && (
+        <NotificationPrefsModal email={email.toLowerCase()} role={role.data} onClose={() => setPrefsOpen(false)} />
+      )}
     </header>
   );
 }

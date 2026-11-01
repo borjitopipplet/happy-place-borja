@@ -198,6 +198,54 @@ export type Database = {
         }
         Relationships: []
       }
+      email_outbox: {
+        Row: {
+          attempts: number
+          body: string
+          created_at: string
+          dedupe_key: string | null
+          delivered_to: string | null
+          id: string
+          kind: string
+          link_path: string | null
+          note: string | null
+          processed_at: string | null
+          recipient_email: string
+          status: Database["public"]["Enums"]["email_status"]
+          subject: string
+        }
+        Insert: {
+          attempts?: number
+          body: string
+          created_at?: string
+          dedupe_key?: string | null
+          delivered_to?: string | null
+          id?: string
+          kind: string
+          link_path?: string | null
+          note?: string | null
+          processed_at?: string | null
+          recipient_email: string
+          status?: Database["public"]["Enums"]["email_status"]
+          subject: string
+        }
+        Update: {
+          attempts?: number
+          body?: string
+          created_at?: string
+          dedupe_key?: string | null
+          delivered_to?: string | null
+          id?: string
+          kind?: string
+          link_path?: string | null
+          note?: string | null
+          processed_at?: string | null
+          recipient_email?: string
+          status?: Database["public"]["Enums"]["email_status"]
+          subject?: string
+        }
+        Relationships: []
+      }
       manager_teams: {
         Row: {
           allowed_user_id: string
@@ -281,19 +329,25 @@ export type Database = {
       }
       notification_preferences: {
         Row: {
+          confirm_submissions: boolean
+          delivery_email: string | null
           email: string
+          review_mode: string
           updated_at: string
-          weekly_summary: boolean
         }
         Insert: {
+          confirm_submissions?: boolean
+          delivery_email?: string | null
           email: string
+          review_mode?: string
           updated_at?: string
-          weekly_summary?: boolean
         }
         Update: {
+          confirm_submissions?: boolean
+          delivery_email?: string | null
           email?: string
+          review_mode?: string
           updated_at?: string
-          weekly_summary?: boolean
         }
         Relationships: []
       }
@@ -529,6 +583,7 @@ export type Database = {
       app_role: "admin" | "manager" | "collaborateur"
       blocker_severity: "critical" | "warning" | "info"
       blocker_status: "OUVERT" | "EN COURS" | "SURVEILLANCE" | "RÉSOLU" | "PROPOSÉ" | "REFUSÉ"
+      email_status: "à envoyer" | "en cours" | "envoyé" | "simulé" | "échec"
       news_status: "brouillon" | "publiée"
       rejection_category:
         | "à clarifier"
@@ -666,6 +721,7 @@ export const Constants = {
       app_role: ["admin", "manager", "collaborateur"],
       blocker_severity: ["critical", "warning", "info"],
       blocker_status: ["OUVERT", "EN COURS", "SURVEILLANCE", "RÉSOLU", "PROPOSÉ", "REFUSÉ"],
+      email_status: ["à envoyer", "en cours", "envoyé", "simulé", "échec"],
       news_status: ["brouillon", "publiée"],
       rejection_category: [
         "à clarifier",
