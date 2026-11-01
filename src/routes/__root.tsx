@@ -67,9 +67,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: false,
 });
 
-// Mode sombre : suit le réglage du système. Le script s'exécute dans le <head>, avant le premier
+// Mode sombre : suit le réglage du système. Certains navigateurs n'envoient pas toujours l'événement « change » ;
+// on revérifie donc aussi au retour sur l'onglet, au focus et toutes les 2 secondes tant que la page est visible. Le script s'exécute dans le <head>, avant le premier
 // affichage, pour éviter l'éclair de thème clair, puis écoute les changements de réglage.
-const THEME_SCRIPT = `(function(){var m=matchMedia('(prefers-color-scheme: dark)');function a(){document.documentElement.classList.toggle('dark',m.matches)}a();m.addEventListener('change',a)})();`;
+const THEME_SCRIPT = `(function(){var d=document.documentElement,m=matchMedia('(prefers-color-scheme: dark)');function a(){d.classList.toggle('dark',m.matches)}a();m.addEventListener('change',a);document.addEventListener('visibilitychange',a);addEventListener('focus',a);addEventListener('pageshow',a);setInterval(function(){if(!document.hidden)a()},2000)})();`;
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
