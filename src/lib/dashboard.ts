@@ -25,6 +25,7 @@ export type Submission = {
   id: string;
   author_name: string;
   team: string;
+  title?: string | null;
   content: string;
   status: string;
   created_at: string;
@@ -188,6 +189,19 @@ export async function fetchDecisions(ids: string[]): Promise<Record<string, Deci
   const out: Record<string, Decision> = {};
   for (const row of (data ?? []) as Decision[]) out[row.submission_id] = row;
   return out;
+}
+
+/**
+ * Publie une idée validée en actualité pour ces équipes ([] = tout le cabinet).
+ * Une seule fois par idée ; renvoie null si c'était déjà fait.
+ */
+export async function publishIdeaAsNews(submissionId: string, recipientTeams: string[]) {
+  const { data, error } = await db.rpc("publier_idee_en_actualite", {
+    p_submission_id: submissionId,
+    p_recipient_teams: recipientTeams,
+  });
+  if (error) throw error;
+  return data;
 }
 
 export async function fetchMySubmissions(email: string): Promise<Submission[]> {
@@ -420,6 +434,7 @@ export type NewsInput = { title: string; body: string; author: string; status: s
 export type SubmissionInput = {
   author_name: string;
   team: string;
+  title?: string;
   content: string;
   status: string;
   rejection_category?: string | null;
@@ -530,7 +545,8 @@ export async function submitIdea(input: Omit<SubmissionInput, "status">, file?: 
     if (upErr) throw upErr;
   }
   const { error } = await db.from("submissions").insert({
-    author_name: input.author_name, team: input.team, content: input.content, status: "en attente",
+    author_name: input.author_name, team: input.team, title: input.title?.trim() || null,
+    content: input.content, status: "en attente",
     attachment_path, attachment_name,
     recipient_teams: input.recipient_teams ?? [],
   });

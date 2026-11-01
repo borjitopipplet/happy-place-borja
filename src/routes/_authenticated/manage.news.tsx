@@ -14,6 +14,7 @@ import {
   TextInput,
 } from "@/components/manage/crud-ui";
 import { newsSchema, validate, type FieldErrors } from "@/lib/manage-schemas";
+import { AmeliorerButton } from "@/components/ameliorer-button";
 import {
   createNews,
   deleteNews,
@@ -182,6 +183,12 @@ function ManageNews() {
                 value={form.body}
                 maxLength={5000}
                 onChange={(e) => setForm({ ...form, body: e.target.value })}
+              />
+              <AmeliorerButton
+                titre={form.title}
+                texte={form.body ?? ""}
+                disabled={save.isPending}
+                onApply={(v) => setForm((f) => (f ? { ...f, title: v.titre, body: v.texte } : f))}
               />
             </Field>
             <Field label="Image et liens">

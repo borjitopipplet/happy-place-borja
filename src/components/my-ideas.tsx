@@ -2,7 +2,6 @@ import { useState } from "react";
 import { AttachmentLink } from "@/components/attachment-link";
 import { Linkify } from "@/components/linkify";
 import { Icon } from "@/components/icon";
-import { forWhomText } from "@/components/recipient-picker";
 import { timeAgo, type Decision, type Submission } from "@/lib/dashboard";
 
 const STATUS: Record<string, { label: string; dot: string }> = {
@@ -52,10 +51,11 @@ export function MyIdeas({ items, decisions = {} }: { items: Submission[]; decisi
                 <span
                   className={`block font-body-sm text-body-sm text-primary wrap-anywhere ${isOpen ? "" : "line-clamp-2"}`}
                 >
+                  {s.title ? <strong className="block">{s.title}</strong> : null}
                   {s.content}
                 </span>
                 <span className="mt-1 block font-label-sm text-label-sm text-on-surface-variant">
-                  {forWhomText(s.recipient_teams)} · {timeAgo(s.created_at)}
+                  {timeAgo(s.created_at)}
                 </span>
               </span>
               <StatusPill status={s.status} />

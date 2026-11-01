@@ -114,6 +114,7 @@ export function ValidatedSubmissions({
               <span className="text-primary font-bold">{s.author_name}</span> • {s.team} •{" "}
               {s.validated_at ? `Validée le ${formatExactDate(s.validated_at)}` : `Soumise le ${formatExactDate(s.created_at)}`}
             </p>
+            {s.title && <p className="font-body-md font-bold text-primary wrap-anywhere">{s.title}</p>}
             <SubmissionPreview content={s.content} onOpen={() => onRead(s)} />
             {s.attachment_path &&
               (canReadAttachment(s, { role, email, managerTeams }) ? (

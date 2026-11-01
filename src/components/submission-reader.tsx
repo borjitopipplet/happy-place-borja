@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Linkify } from "@/components/linkify";
 import { AttachmentLink } from "@/components/attachment-link";
@@ -12,6 +13,7 @@ export function SubmissionReader({
   onReject,
   onApprove,
   approving,
+  publishOption,
 }: {
   submission: Submission | null;
   statusLabel?: string;
@@ -19,6 +21,8 @@ export function SubmissionReader({
   onReject?: () => void;
   onApprove?: () => void;
   approving?: boolean;
+  /** Option « Publier aussi en actualité », affichée au-dessus des boutons. */
+  publishOption?: ReactNode;
 }) {
   return (
     <DialogPrimitive.Root open={!!s} onOpenChange={(o) => !o && onClose()}>
@@ -45,6 +49,7 @@ export function SubmissionReader({
               </DialogPrimitive.Close>
             </div>
             <div className="flex-1 overflow-y-auto p-md space-y-md">
+              {s.title && <p className="font-headline-sm text-headline-sm text-primary wrap-anywhere">{s.title}</p>}
               <p className="font-body-md text-body-md text-on-surface whitespace-pre-line wrap-anywhere">
                 <Linkify text={s.content} />
               </p>
@@ -57,7 +62,9 @@ export function SubmissionReader({
               )}
             </div>
             {(onReject || onApprove) && (
-              <div className="flex gap-xs border-t border-outline-variant p-md">
+              <div className="border-t border-outline-variant p-md space-y-xs">
+              {onApprove && publishOption}
+              <div className="flex gap-xs">
                 {onReject && (
                   <button
                     type="button"
@@ -77,6 +84,7 @@ export function SubmissionReader({
                     VALIDER
                   </button>
                 )}
+              </div>
               </div>
             )}
           </DialogPrimitive.Content>

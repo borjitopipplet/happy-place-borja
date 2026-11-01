@@ -15,6 +15,8 @@ import { daysSince, LATE_AFTER_DAYS, STALE_BLOCKER_DAYS } from "@/lib/delays";
 import { AttachmentLink } from "@/components/attachment-link";
 import { CharCounter, SubmissionPreview, rejectionErrorMessage } from "@/components/expandable-card";
 import { SubmissionReader } from "@/components/submission-reader";
+import { AmeliorerButton } from "@/components/ameliorer-button";
+import { PublishAsNewsOption, type PublishChoice } from "@/components/publish-as-news";
 import { NewsMediaEditor } from "@/components/news-media";
 import { emptyMedia, linkErrors, mediaFromNews, toNewsLinks, type MediaDraft } from "@/lib/news-media";
 import {
@@ -30,6 +32,7 @@ import {
   publishDraftNews,
   deleteDraftNews,
   reviewSubmission,
+  publishIdeaAsNews,
   timeAgo,
 } from "@/lib/dashboard";
 
@@ -145,7 +148,26 @@ function ATraiter() {
   });
 
   // Décision différée de 8 s : le temps d'annuler. Si on quitte la page, les décisions en cours partent tout de suite.
-  type ReviewVars = Parameters<typeof reviewSubmission>[0];
+  // « publier » : l'idée validée devient aussi une actualité pour ces équipes ([] = tout le cabinet),
+  // annulée avec la décision. Le manager ou l'admin choisit les destinataires, pas l'auteur de l'idée.
+  type ReviewVars = Parameters<typeof reviewSubmission>[0] & { publier?: string[] };
+  const [publishChoices, setPublishChoices] = useState<Map<string, NonNullable<PublishChoice>>>(new Map());
+  const publishChoice = (id: string): PublishChoice => publishChoices.get(id) ?? null;
+  const setPublishChoice = (id: string, v: PublishChoice) =>
+    setPublishChoices((p) => {
+      const n = new Map(p);
+      if (v) n.set(id, v);
+      else n.delete(id);
+      return n;
+    });
+  async function applyDecision({ publier, ...vars }: ReviewVars) {
+    await reviewSubmission(vars);
+    if (publier && vars.status === "validée") {
+      await publishIdeaAsNews(vars.id, publier);
+      toast.success("Actualité publiée");
+      qc.invalidateQueries({ queryKey: ["news"] });
+    }
+  }
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const timers = useRef(new Map<string, { vars: ReviewVars; timer: ReturnType<typeof setTimeout> }>());
   const unpend = (id: string) =>
@@ -159,7 +181,7 @@ function ATraiter() {
   async function send(vars: ReviewVars) {
     timers.current.delete(vars.id);
     try {
-      await reviewSubmission(vars);
+      await applyDecision(vars);
     } catch (e) {
       toast.error(rejectionErrorMessage(e));
     } finally {
@@ -173,7 +195,7 @@ function ATraiter() {
     const flush = () => {
       for (const { vars, timer } of current.values()) {
         clearTimeout(timer);
-        reviewSubmission(vars).catch(() => {});
+        applyDecision(vars).catch(() => {});
       }
       current.clear();
     };
@@ -211,6 +233,16 @@ function ATraiter() {
         },
       },
     });
+  }
+
+  function approve(s: Submission) {
+    const choice = publishChoice(s.id);
+    if (choice?.scope === "teams" && choice.teams.length === 0) {
+      toast.error("Choisis au moins une équipe pour l'actualité, ou « Tout le cabinet ».");
+      return;
+    }
+    const publier = choice ? (choice.scope === "all" ? [] : choice.teams) : undefined;
+    decide({ id: s.id, status: "validée", publier }, publier ? "Idée validée et publiée en actualité" : "Idée validée");
   }
 
   function copyEmail(email: string) {
@@ -356,6 +388,15 @@ function ATraiter() {
                   rows={4}
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
+                />
+                <AmeliorerButton
+                  titre={title}
+                  texte={body}
+                  disabled={saveDraft.isPending}
+                  onApply={(v) => {
+                    setTitle(v.titre);
+                    setBody(v.texte);
+                  }}
                 />
               </div>
               <RecipientPicker
@@ -570,7 +611,7 @@ function ATraiter() {
                     <div className="min-w-0 flex-1">
                       <p className="font-body-sm text-primary font-bold wrap-anywhere">{s.author_name}</p>
                       <p className="text-xs text-on-surface-variant font-label-sm wrap-anywhere">
-                        {s.team} · {forWhomText(s.recipient_teams)}
+                        {s.team}
                       </p>
                     </div>
                     <span className="text-xs text-on-surface-variant font-label-sm whitespace-nowrap">
@@ -596,6 +637,7 @@ function ATraiter() {
                       </button>
                     </div>
                   )}
+                  {s.title && <p className="font-body-md font-bold text-primary wrap-anywhere">{s.title}</p>}
                   <SubmissionPreview content={s.content} onOpen={() => setReading(s)} />
                   <AttachmentLink path={s.attachment_path} name={s.attachment_name} />
                   {isOwnIdea(s) ? (
@@ -603,7 +645,14 @@ function ATraiter() {
                       C'est ton idée : un autre manager de l'équipe ou un admin la traite.
                     </p>
                   ) : (
-                  <div id={idx === 0 ? "tour-decision" : undefined} className="flex gap-xs pt-xs">
+                  <div id={idx === 0 ? "tour-decision" : undefined} className="space-y-xs pt-xs">
+                  <PublishAsNewsOption
+                    id={s.id}
+                    value={publishChoice(s.id)}
+                    onChange={(v) => setPublishChoice(s.id, v)}
+                    teams={teamNames.data ?? []}
+                  />
+                  <div className="flex gap-xs">
                     <button
                       onClick={() => startReject(s)}
                       className="min-h-11 flex-1 rounded-md border border-primary text-primary font-label-md text-label-md hover:bg-surface-container transition-colors"
@@ -611,11 +660,12 @@ function ATraiter() {
                       REFUSER
                     </button>
                     <button
-                      onClick={() => decide({ id: s.id, status: "validée" }, "Idée validée")}
+                      onClick={() => approve(s)}
                       className="min-h-11 flex-1 rounded-md bg-primary text-on-primary font-label-md text-label-md hover:opacity-90 transition-colors"
                     >
                       VALIDER
                     </button>
+                  </div>
                   </div>
                   )}
                 </div>
@@ -680,10 +730,16 @@ function ATraiter() {
         submission={reading}
         onClose={() => setReading(null)}
         onReject={reading && reading.status === "en attente" && !isOwnIdea(reading) ? () => startReject(reading) : undefined}
-        onApprove={
-          reading && reading.status === "en attente" && !isOwnIdea(reading)
-            ? () => decide({ id: reading.id, status: "validée" }, "Idée validée")
-            : undefined
+        onApprove={reading && reading.status === "en attente" && !isOwnIdea(reading) ? () => approve(reading) : undefined}
+        publishOption={
+          reading && reading.status === "en attente" && !isOwnIdea(reading) ? (
+            <PublishAsNewsOption
+              id={`reader-${reading.id}`}
+              value={publishChoice(reading.id)}
+              onChange={(v) => setPublishChoice(reading.id, v)}
+              teams={teamNames.data ?? []}
+            />
+          ) : undefined
         }
       />
       {rejecting && (

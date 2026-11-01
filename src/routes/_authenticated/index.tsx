@@ -8,12 +8,14 @@ import { rejectionSchema, submissionSchema, validate, type FieldErrors } from "@
 import { BrandHeader } from "@/components/brand-header";
 import { Icon } from "@/components/icon";
 import { MyBlockerProposals, ProposeBlockerModal } from "@/components/blocker-proposals";
-import { RecipientPicker, forWhomText } from "@/components/recipient-picker";
+import { forWhomText } from "@/components/recipient-picker";
 import { MyIdeas } from "@/components/my-ideas";
 import { Tour } from "@/components/tour";
 import { accueilTourSteps, tourKey } from "@/lib/tours";
 import { CharCounter, rejectionErrorMessage } from "@/components/expandable-card";
 import { SubmissionReader } from "@/components/submission-reader";
+import { AmeliorerButton } from "@/components/ameliorer-button";
+import { FilePickerButton } from "@/components/file-picker";
 import { NewsReader } from "@/components/news-reader";
 import { DepartureNotices } from "@/components/departure-notices";
 import { NewsImage, NewsLinks } from "@/components/news-media";
@@ -129,7 +131,6 @@ function ManagerSpace() {
   const firstName = profile.data?.first_name ?? "";
   const fullName = [profile.data?.first_name, profile.data?.last_name].filter(Boolean).join(" ") || myName;
   const teamNames = useQuery({ queryKey: ["teams", "names"], queryFn: fetchTeamNames, retry: false });
-  const [recipientScope, setRecipientScope] = useState<"all" | "teams">("all");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [reading, setReading] = useState<Submission | null>(null);
   const [readingNews, setReadingNews] = useState<News | null>(null);
@@ -172,6 +173,7 @@ function ManagerSpace() {
     mutationFn: (input: SubmissionInput) => submitIdea({
       author_name: input.author_name,
       team: input.team,
+      title: input.title,
       content: input.content,
       recipient_teams: input.recipient_teams,
     }, attachment),
@@ -215,19 +217,19 @@ function ManagerSpace() {
     // Collaborators: team is set server-side from their account
     // Admin: always the « Admin » team (set server-side); manager: one of their teams
     const team = role === "collaborateur" ? "auto" : role === "admin" ? "Admin" : submissionForm.team;
-    if (recipientScope === "teams" && !submissionForm.recipient_teams?.length) {
-      setSubmissionErrors({ recipient_teams: "Choisis au moins une équipe, ou « Tout le cabinet »." });
-      return;
-    }
     const result = validate(submissionSchema, {
       ...submissionForm,
       author_name: fullName,
       team,
       status: "en attente",
-      recipient_teams: recipientScope === "all" ? [] : submissionForm.recipient_teams,
+      // Les destinataires se choisissent à la publication en actualité, par le manager ou l'admin.
+      recipient_teams: [],
     });
-    if (!result.ok) {
-      setSubmissionErrors(result.errors);
+    // Le titre sert si l'idée devient une actualité : on le demande à l'envoi.
+    const errors: FieldErrors = result.ok ? {} : { ...result.errors };
+    if (!submissionForm.title?.trim()) errors.title = "Donne un titre à ton idée (ou utilise « Améliorer »).";
+    if (!result.ok || Object.keys(errors).length) {
+      setSubmissionErrors(errors);
       return;
     }
     setSubmissionErrors({});
@@ -276,9 +278,9 @@ function ManagerSpace() {
               type="button"
               onClick={() => {
                 setSubmissionErrors({});
+                setAttachment(null);
                 const only = role === "manager" && myTeams.data?.length === 1 ? myTeams.data[0] : "";
-                setRecipientScope("all");
-                setSubmissionForm({ author_name: "", team: only, content: "", status: "en attente", recipient_teams: [] });
+                setSubmissionForm({ author_name: "", team: only, title: "", content: "", status: "en attente", recipient_teams: [] });
               }}
               className="inline-flex min-h-11 items-center gap-xs rounded-md bg-primary px-md py-xs font-label-md text-label-md text-on-primary hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
@@ -605,38 +607,45 @@ function ManagerSpace() {
             {role === "admin" && (
               <p className="text-body-sm text-on-surface-variant">Équipe : Admin</p>
             )}
-            <RecipientPicker
-              name="idea-recipients"
-              scope={recipientScope}
-              onScopeChange={setRecipientScope}
-              value={submissionForm.recipient_teams ?? []}
-              onChange={(v) => setSubmissionForm({ ...submissionForm, recipient_teams: v })}
-              teams={teamNames.data ?? []}
-              error={submissionErrors.recipient_teams}
-            />
+            <Field label="Titre" error={submissionErrors.title}>
+              <TextInput
+                value={submissionForm.title ?? ""}
+                maxLength={120}
+                placeholder="En quelques mots…"
+                onChange={(e) => setSubmissionForm({ ...submissionForm, title: e.target.value })}
+              />
+            </Field>
             <Field label="Proposition" error={submissionErrors.content}>
               <TextArea
                 rows={5}
                 value={submissionForm.content}
-                placeholder="Décris l'amélioration proposée pour le cabinet…"
+                placeholder="Écris ton idée simplement, puis « Améliorer » si tu veux un coup de main pour la rédiger…"
                 onChange={(e) => setSubmissionForm({ ...submissionForm, content: e.target.value })}
               />
-              <CharCounter value={submissionForm.content} max={2000} min={5} />
+              <div className="flex items-start justify-between gap-sm">
+                <AmeliorerButton
+                  titre={submissionForm.title ?? ""}
+                  texte={submissionForm.content}
+                  disabled={submit.isPending}
+                  onApply={(v) => setSubmissionForm((f) => (f ? { ...f, title: v.titre, content: v.texte } : f))}
+                />
+                <CharCounter value={submissionForm.content} max={2000} min={5} />
+              </div>
             </Field>
             <Field label="Pièce jointe (optionnelle : PDF, PNG ou JPG, 20 Mo max)" error={submissionErrors.attachment}>
-              <input
-                type="file"
+              <FilePickerButton
                 accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg"
-                className="block w-full text-body-sm"
-                onChange={(e) => {
-                  const f = e.target.files?.[0] ?? null;
+                file={attachment}
+                onSelect={(f) => {
                   if (f && !(f.type in ATTACHMENT_TYPES)) {
                     setSubmissionErrors({ ...submissionErrors, attachment: "Seuls les fichiers PDF, PNG et JPG sont acceptés." });
-                    e.target.value = ""; setAttachment(null); return;
+                    setAttachment(null);
+                    return false;
                   }
                   if (f && f.size > MAX_ATTACHMENT_BYTES) {
                     setSubmissionErrors({ ...submissionErrors, attachment: "Le fichier dépasse 20 Mo." });
-                    e.target.value = ""; setAttachment(null); return;
+                    setAttachment(null);
+                    return false;
                   }
                   const { attachment: _a, ...rest } = submissionErrors;
                   setSubmissionErrors(rest);

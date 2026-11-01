@@ -308,6 +308,7 @@ export type Database = {
           links: Json
           revalidate_at: string | null
           recipient_teams: string[]
+          source_submission_id: string | null
           status: Database["public"]["Enums"]["news_status"]
           title: string
         }
@@ -321,6 +322,7 @@ export type Database = {
           links?: Json
           revalidate_at?: string | null
           recipient_teams?: string[]
+          source_submission_id?: string | null
           status?: Database["public"]["Enums"]["news_status"]
           title: string
         }
@@ -334,6 +336,7 @@ export type Database = {
           links?: Json
           revalidate_at?: string | null
           recipient_teams?: string[]
+          source_submission_id?: string | null
           status?: Database["public"]["Enums"]["news_status"]
           title?: string
         }
@@ -409,6 +412,7 @@ export type Database = {
           status: Database["public"]["Enums"]["submission_status"]
           submitted_by_email: string | null
           team: string
+          title: string | null
         }
         Insert: {
           attachment_name?: string | null
@@ -426,6 +430,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["submission_status"]
           submitted_by_email?: string | null
           team: string
+          title?: string | null
         }
         Update: {
           attachment_name?: string | null
@@ -443,6 +448,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["submission_status"]
           submitted_by_email?: string | null
           team?: string
+          title?: string | null
         }
         Relationships: [
           {
@@ -489,6 +495,14 @@ export type Database = {
       }
     }
     Functions: {
+      consommer_quota_ia: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      publier_idee_en_actualite: {
+        Args: { p_submission_id: string; p_recipient_teams?: string[] }
+        Returns: string | null
+      }
       editable_news_ids: {
         Args: Record<PropertyKey, never>
         Returns: string[]
